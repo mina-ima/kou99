@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { initDB, saveImage, getImage } from './db';
+import { initDB, saveImage, getImage, deleteImage } from './db';
 import { TRAIN_DATA } from './train-data';
 
 // --- Styles ---
@@ -212,6 +213,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         textAlign: 'center',
         transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         cursor: 'pointer',
+        userSelect: 'none', // Prevent text selection on long press
     },
     trainCardImage: {
         width: '100%',
@@ -314,6 +316,8 @@ interface GalleryScreenProps {
     cards: TrainCardData[];
     totalCount: number;
     setMode: (mode: Mode) => void;
+    onCardImageRetry: (cardId: number) => void;
+    retryTimestamps: { [key: number]: number };
 }
 
 interface NewCardScreenProps {
@@ -361,18 +365,23 @@ const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', ticket
 // --- Reusable Card Image Component ---
 function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSSProperties, alt: string }) {
     const [imageSrc, setImageSrc] = useState<string>('');
+    const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
         let objectUrlToRevoke: string | null = null;
+        let isMounted = true;
 
         const loadImage = async () => {
             try {
+                setHasError(false);
                 // 1. Check IndexedDB
                 const cachedBlob = await getImage(String(card.id));
                 if (cachedBlob) {
                     const url = URL.createObjectURL(cachedBlob);
-                    objectUrlToRevoke = url;
-                    setImageSrc(url);
+                    if (isMounted) {
+                        objectUrlToRevoke = url;
+                        setImageSrc(url);
+                    }
                     return;
                 }
 
@@ -388,18 +397,24 @@ function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSS
                 
                 // 4. Display the image
                 const url = URL.createObjectURL(imageBlob);
-                objectUrlToRevoke = url;
-                setImageSrc(url);
+                if(isMounted) {
+                    objectUrlToRevoke = url;
+                    setImageSrc(url);
+                }
             } catch (error) {
                 console.error(`Error loading image for ${card.name}:`, error);
-                // Fallback to the original URL if anything fails
-                setImageSrc(card.imageDataUrl);
+                if (isMounted) {
+                    // Fallback to the original URL if anything fails
+                    setImageSrc(card.imageDataUrl); // Attempt to load directly
+                    setHasError(true);
+                }
             }
         };
 
         loadImage();
 
         return () => {
+            isMounted = false;
             if (objectUrlToRevoke) {
                 URL.revokeObjectURL(objectUrlToRevoke);
             }
@@ -411,7 +426,12 @@ function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSS
         return <div style={{...style, backgroundColor: '#eee' }} aria-label={alt}></div>;
     }
 
-    return <img src={imageSrc} style={style} alt={alt} />;
+    return <img 
+        src={imageSrc} 
+        style={style} 
+        alt={alt}
+        onError={() => setHasError(true)} 
+    />;
 }
 
 
@@ -644,16 +664,45 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
     );
 }
 
-function GalleryScreen({ cards, totalCount, setMode }: GalleryScreenProps): React.ReactElement {
+function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTimestamps }: GalleryScreenProps): React.ReactElement {
     const sortedCards = [...cards].sort((a, b) => a.id - b.id);
+    const longPressTimer = useRef<number | null>(null);
 
+    const handlePressStart = (cardId: number) => {
+        longPressTimer.current = window.setTimeout(() => {
+            onCardImageRetry(cardId);
+            longPressTimer.current = null; // Prevent multiple triggers
+        }, 1000); // 1 second for long press
+    };
+
+    const handlePressEnd = () => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+    };
+    
     return (
         <div style={styles.galleryContainer}>
             <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length}/{totalCount})</h2>
+            <p style={{color: '#666', fontSize: 'clamp(0.8rem, 2.5vmin, 1rem)', margin: '-1rem 0 1rem 0'}}>画像がうまく表示されない時は、カードを長押ししてみてね。</p>
             <div style={styles.galleryGrid}>
                 {sortedCards.map(card => (
-                    <div key={card.id} style={styles.trainCard}>
-                        <CardImage card={card} style={styles.trainCardImage} alt={card.name} />
+                    <div 
+                        // FIX: Moved dynamic key from CardImage to its parent div to fix TypeScript error and force re-render on retry.
+                        key={`${card.id}-${retryTimestamps[card.id] || 0}`}
+                        style={styles.trainCard}
+                        onMouseDown={() => handlePressStart(card.id)}
+                        onMouseUp={handlePressEnd}
+                        onMouseLeave={handlePressEnd}
+                        onTouchStart={() => handlePressStart(card.id)}
+                        onTouchEnd={handlePressEnd}
+                    >
+                        <CardImage 
+                            card={card} 
+                            style={styles.trainCardImage} 
+                            alt={card.name} 
+                        />
                         <h3 style={styles.trainCardName}>{card.name}</h3>
                         <p style={styles.trainCardInfo}>{card.line}</p>
                         <p style={styles.trainCardDescription}>{card.description}</p>
@@ -721,12 +770,27 @@ function App() {
     const [cardTickets, setCardTickets] = useState<number>(getCardTickets);
     const [newCard, setNewCard] = useState<TrainCardData | null>(null);
     const [cardToDraw, setCardToDraw] = useState<TrainCardData | null>(null);
+    const [retryTimestamps, setRetryTimestamps] = useState<{ [key: number]: number }>({});
 
     useEffect(() => {
         async function initializeApp() {
             try {
                 await initDB();
-                setMasterTrainList(TRAIN_DATA);
+                const masterList = TRAIN_DATA;
+                setMasterTrainList(masterList);
+
+                // アプリ起動時に、収集済みカード数と次に引くべきインデックスの同期をとります。
+                // これにより、TRAIN_DATAに新しいカードが追加された場合でも、
+                // 既存ユーザーは続きからカードを引くことができるようになります。
+                const currentCollectedCards = getCollectedCards();
+                const currentNextTrainIndex = getNextTrainIndex();
+
+                if (masterList.length > 0 && currentNextTrainIndex < currentCollectedCards.length) {
+                    const newIndex = currentCollectedCards.length % masterList.length;
+                    saveNextTrainIndex(newIndex);
+                    setNextTrainIndex(newIndex);
+                }
+
             } catch (err) {
                 console.error(err);
                 setError('アプリの初期化中にエラーが発生しました。');
@@ -797,6 +861,21 @@ function App() {
         }
     }, [masterTrainList.length]);
 
+    const handleCardImageRetry = useCallback(async (cardId: number) => {
+        if (window.confirm('このカードの画像をもう一度よみこみますか？')) {
+            try {
+                await deleteImage(String(cardId));
+                setRetryTimestamps(prev => ({
+                    ...prev,
+                    [cardId]: Date.now()
+                }));
+            } catch (error) {
+                console.error('Failed to retry image load:', error);
+                alert('画像の再読み込みに失敗しました。');
+            }
+        }
+    }, []);
+
     const renderScreen = () => {
         if (isLoading) {
              return (
@@ -822,7 +901,13 @@ function App() {
             case 'test':
                 return <TestScreen setMode={setMode} onPerfectScore={handlePerfectScore} />;
             case 'gallery':
-                return <GalleryScreen cards={collectedCards} totalCount={masterTrainList.length} setMode={setMode} />;
+                return <GalleryScreen 
+                    cards={collectedCards} 
+                    totalCount={masterTrainList.length} 
+                    setMode={setMode}
+                    onCardImageRetry={handleCardImageRetry}
+                    retryTimestamps={retryTimestamps}
+                />;
             case 'reward':
                 return <RewardScreen setMode={setMode} />;
             case 'drawingCard':

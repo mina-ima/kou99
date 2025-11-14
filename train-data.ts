@@ -393,5 +393,47 @@ export const TRAIN_DATA = [
         line: '中央新幹線（予定）',
         description: '磁石の力で浮いて走る未来の乗り物。時速500kmを超えるスピードで、東京と名古屋をあっという間に結ぶ予定だよ。',
         imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/7304bd21-1c39-445a-a567-0c7f29b0a880.jpeg'
+    },
+    {
+        id: 55,
+        name: '近鉄アーバンライナーplus',
+        line: '近鉄（大阪 - 名古屋）',
+        description: '大阪と名古屋を結ぶ、近鉄のビジネス特急。白いボディにオレンジのラインが特徴で、快適な座席でビジネスマンに人気。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Kintetsu_21000_series_UL02_at_Ise-Nakagawa_Sta._20120909.JPG/1024px-Kintetsu_21000_series_UL02_at_Ise-Nakagawa_Sta._20120909.JPG'
+    },
+    {
+        id: 56,
+        name: '近鉄30000系ビスタEX',
+        line: '近鉄（伊勢志摩方面など）',
+        description: '日本初の2階建て電車としてデビューした伝統ある特急。階下席はグループ旅行にぴったりのサロン風になっている。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Kintetsu_30000_VISTA_EX.jpg/1024px-Kintetsu_30000_VISTA_EX.jpg'
+    },
+    {
+        id: 57,
+        name: '快速マリンライナー',
+        line: 'JR瀬戸大橋線（岡山 - 高松）',
+        description: '岡山と四国の高松を瀬戸大橋で結ぶ快速列車。2階建て車両からの海の眺めは最高！通勤や通学、観光に大活躍。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/JR_Shikoku_5000_series_and_223-5000_series_Marine_Liner_crossing_the_Great_Seto_Bridge.jpg/1024px-JR_Shikoku_5000_series_and_223-5000_series_Marine_Liner_crossing_the_Great_Seto_Bridge.jpg'
+    },
+    {
+        id: 58,
+        name: '特急いしづち (2000系)',
+        line: 'JR予讃線',
+        description: '高松と愛媛の松山などを結ぶ振り子式ディーゼル特急。アンパンマン列車としても活躍し、カーブの多い予讃線を力強く走る。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/JR_Shikoku_2000_series_DMU_Ishizuchi.jpg/1024px-JR_Shikoku_2000_series_DMU_Ishizuchi.jpg'
+    },
+    {
+        id: 59,
+        name: 'びゅうコースター風っこ',
+        line: 'JR東日本',
+        description: '窓がないトロッコ車両で、風を感じながら旅ができる楽しい列車。主に景色が綺麗なローカル線を走り、自然を満喫できる。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Jreast-kiha48-kazekko.jpg/1024px-Jreast-kiha48-kazekko.jpg'
+    },
+    {
+        id: 60,
+        name: 'THE ROYAL EXPRESS',
+        line: '伊豆急行線・JR北海道',
+        description: '美しいロイヤルブルーの車体が特徴の豪華観光列車。伊豆や北海道の美しい景色の中、音楽や美味しい食事を楽しむ贅沢な旅ができる。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/THE_ROYAL_EXPRESS_at_Sapporo_station.jpg/1024px-THE_ROYAL_EXPRESS_at_Sapporo_station.jpg'
     }
 ];

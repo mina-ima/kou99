@@ -76,3 +76,22 @@ export function getImage(id: string): Promise<Blob | null> {
         }
     });
 }
+
+export function deleteImage(id: string): Promise<void> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const dbInstance = await initDB();
+      const transaction = dbInstance.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => {
+        console.error('Failed to delete image:', request.error);
+        reject(request.error);
+      };
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
