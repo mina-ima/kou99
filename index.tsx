@@ -277,7 +277,7 @@ type TrainCardData = {
 };
 
 // Fix: Create a strict type for application mode state
-type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'error' | 'reward';
+type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'error' | 'reward' | 'drawingCard';
 
 // --- Component Prop Types ---
 interface InputControlsProps {
@@ -317,6 +317,12 @@ interface GalleryScreenProps {
 interface NewCardScreenProps {
     newCard: TrainCardData | null;
     setMode: (mode: Mode) => void;
+}
+
+interface DrawingCardScreenProps {
+    cardToDraw: TrainCardData;
+    onLoadSuccess: (card: TrainCardData) => void;
+    onLoadError: (error: Error) => void;
 }
 
 interface ErrorScreenProps {
@@ -701,6 +707,44 @@ function NewCardScreen({ newCard, setMode }: NewCardScreenProps): React.ReactEle
     );
 }
 
+function DrawingCardScreen({ cardToDraw, onLoadSuccess, onLoadError }: DrawingCardScreenProps): React.ReactElement {
+    useEffect(() => {
+        if (!cardToDraw || !cardToDraw.imageUrl) {
+            onLoadError(new Error("カード情報が見つかりません。"));
+            return;
+        }
+
+        const img = new Image();
+        img.src = cardToDraw.imageUrl;
+
+        const handleLoad = () => {
+            const finalCard = { ...cardToDraw, id: Date.now() };
+            onLoadSuccess(finalCard);
+        };
+
+        const handleError = () => {
+            const errorMessage = `「${cardToDraw.name}」の画像の読み込みに失敗しました。チケットは消費されていません。`;
+            onLoadError(new Error(errorMessage));
+        };
+
+        img.addEventListener('load', handleLoad);
+        img.addEventListener('error', handleError);
+
+        return () => {
+            img.removeEventListener('load', handleLoad);
+            img.removeEventListener('error', handleError);
+        };
+    }, [cardToDraw, onLoadSuccess, onLoadError]);
+
+    return (
+        <div style={styles.screenWrapper}>
+            <div style={styles.loadingText}>
+                あたらしいカードを準備中...
+            </div>
+        </div>
+    );
+}
+
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
 // FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function ErrorScreen({ error, setMode, setError }: ErrorScreenProps): React.ReactElement {
@@ -730,23 +774,53 @@ function App(): React.ReactElement {
     const [cardTickets, setCardTickets] = useState<number>(() => getCardTickets());
     const [newlyCollectedCard, setNewlyCollectedCard] = useState<TrainCardData | null>(null);
     const [error, setError] = useState<Error | null>(null);
+    const [cardToDraw, setCardToDraw] = useState<TrainCardData | null>(null);
 
     const handlePerfectScore = useCallback(() => {
         const newTicketCount = cardTickets + 1;
         try {
-            // First, try to save the new state to persistent storage.
             saveCardTickets(newTicketCount);
-            
-            // If saving succeeds, update the component's state.
             setCardTickets(newTicketCount);
             setMode('reward');
         } catch (e) {
-            // If saving fails, show an error and don't change the state.
             console.error("Failed to save new ticket data", e);
             setError(new Error('チケットの保存に失敗しました。もう一度試してください。'));
             setMode('error');
         }
     }, [cardTickets]);
+
+    const handleDrawError = useCallback((error: Error) => {
+        setError(error);
+        setMode('error');
+    }, []);
+    
+    const handleDrawSuccess = useCallback((newCard: TrainCardData) => {
+        const drawnTrainIndex = TRAIN_DATA.findIndex(train => train.name === newCard.name);
+        
+        if (drawnTrainIndex === -1) {
+            handleDrawError(new Error('内部エラー: カードデータが見つかりませんでした。'));
+            return;
+        }
+
+        const newTicketCount = cardTickets - 1;
+        const newCollectedCards = [...collectedCards, newCard];
+        const newNextTrainIndex = drawnTrainIndex + 1;
+
+        try {
+            saveCardTickets(newTicketCount);
+            saveCollectedCards(newCollectedCards);
+            saveNextTrainIndex(newNextTrainIndex);
+            
+            setCardTickets(newTicketCount);
+            setCollectedCards(newCollectedCards);
+            setNewlyCollectedCard(newCard);
+            setMode('newCard');
+        } catch (e) {
+            console.error("Failed to save new card data", e);
+            setError(new Error('カードの保存に失敗しました。チケットは消費されていません。もう一度試してください。'));
+            setMode('error');
+        }
+    }, [cardTickets, collectedCards, handleDrawError]);
     
     const handleDrawCard = useCallback(() => {
         if (cardTickets <= 0) return;
@@ -754,55 +828,32 @@ function App(): React.ReactElement {
         let trainToGenerate: (typeof TRAIN_DATA)[0] | null = null;
         let nextTrainDataIndex = getNextTrainIndex();
 
-        // Loop to find the next train that the user hasn't collected yet.
         while (nextTrainDataIndex < TRAIN_DATA.length) {
             const potentialTrain = TRAIN_DATA[nextTrainDataIndex];
             const alreadyCollected = collectedCards.some(card => card.name === potentialTrain.name);
             if (!alreadyCollected) {
                 trainToGenerate = potentialTrain;
-                break; // Found a new train to generate.
+                break;
             }
-            nextTrainDataIndex++; // This one is already collected, check the next.
+            nextTrainDataIndex++;
         }
 
-        // If no new train was found, it means all cards have been collected.
         if (!trainToGenerate) {
             setMode('gallery');
             setTimeout(() => alert("すべての電車カードを集めました！おめでとう！"), 100);
             return;
         }
         
-        const newCard: TrainCardData = {
-            id: Date.now(),
+        const potentialCard: TrainCardData = {
+            id: 0, // Temporary ID
             name: trainToGenerate.name,
             line: trainToGenerate.line,
             description: trainToGenerate.description,
             imageUrl: trainToGenerate.imageUrl,
         };
-
-        const newTicketCount = cardTickets - 1;
-        const newCollectedCards = [...collectedCards, newCard];
-        const newNextTrainIndex = nextTrainDataIndex + 1;
-
-        try {
-            // Try to save all changes to persistent storage first.
-            // This makes the operation more "atomic".
-            saveCardTickets(newTicketCount);
-            saveCollectedCards(newCollectedCards);
-            saveNextTrainIndex(newNextTrainIndex);
-            
-            // If all saves are successful, update the React state to reflect on UI.
-            setCardTickets(newTicketCount);
-            setCollectedCards(newCollectedCards);
-            setNewlyCollectedCard(newCard);
-            setMode('newCard');
-        } catch (e) {
-            // If any save fails, we don't update the state and show an error.
-            // The user does not lose their ticket.
-            console.error("Failed to save new card data", e);
-            setError(new Error('カードの保存に失敗しました。チケットは消費されていません。もう一度試してください。'));
-            setMode('error');
-        }
+        
+        setCardToDraw(potentialCard);
+        setMode('drawingCard');
     }, [cardTickets, collectedCards]);
 
 
@@ -818,6 +869,8 @@ function App(): React.ReactElement {
                 return <RewardScreen setMode={setMode} />;
             case 'newCard':
                 return <NewCardScreen newCard={newlyCollectedCard} setMode={setMode} />;
+            case 'drawingCard':
+                return <DrawingCardScreen cardToDraw={cardToDraw!} onLoadSuccess={handleDrawSuccess} onLoadError={handleDrawError} />;
             case 'error':
                  return <ErrorScreen error={error} setMode={setMode} setError={setError} />;
             case 'home':
