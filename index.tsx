@@ -1,8 +1,6 @@
-
-
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import { TRAIN_DATA } from './train-data';
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -247,15 +245,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 'bold',
     },
     // Styles for Error Screen
-    errorDeveloperInfo: {
-        backgroundColor: '#fff3e0',
-        border: '2px solid #ff9800',
-        borderRadius: '10px',
-        padding: '1rem',
-        margin: '1rem 0',
-        textAlign: 'left',
-        maxWidth: '600px'
-    },
     errorDetails: {
         backgroundColor: '#ffebee',
         padding: '1rem',
@@ -279,10 +268,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     }
 };
 
-const TRAIN_LIST = [
-    'N700S系新幹線', 'E5系新幹線はやぶさ', 'ドクターイエロー', 'E235系山手線', '阪急1000系', '近鉄ひのとり', '小田急ロマンスカーGSE', '南海ラピート', '京急2100形', '西武Laview', '東武スペーシアX', 'サンライズ出雲・瀬戸', 'サフィール踊り子', '近鉄しまかぜ', 'ゆふいんの森', 'WEST EXPRESS 銀河', 'POKÉMON with YOUトレイン', 'あをによし', '伊予灘ものがたり', 'SLやまぐち号', 'ろくもん', '36ぷらす3'
-];
-
 type TrainCardData = {
     id: number;
     name: string;
@@ -292,7 +277,7 @@ type TrainCardData = {
 };
 
 // Fix: Create a strict type for application mode state
-type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'loading' | 'error' | 'reward';
+type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'error' | 'reward';
 
 // --- Component Prop Types ---
 interface InputControlsProps {
@@ -374,38 +359,10 @@ const getCardTickets = (): number => getFromStorage('cardTickets', 0);
 const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', tickets);
 
 
-// --- API Helper ---
-// FIX: Changed from const arrow function to a standard async function declaration to resolve parsing errors.
-async function generateTrainCard(trainName: string): Promise<Omit<TrainCardData, 'id' | 'name'>> {
-    const response = await fetch('/api/generate-card', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ trainName }),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ 
-            error: 'サーバーからエラー応答がありましたが、詳細の解析に失敗しました。',
-            details: `HTTPステータス: ${response.status}`
-        }));
-        console.error('API Error:', errorData);
-        const errorMessage = `${errorData.error || 'サーバーエラー'}${errorData.details ? ` (${errorData.details})` : ''}`;
-        throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    return {
-        line: data.line,
-        description: data.description,
-        imageUrl: data.imageUrl,
-    };
-}
-
 // --- Input Controls Component ---
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function InputControls({ value, onNumberClick, onClear, onCheck, checkDisabled, showNext }: InputControlsProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function InputControls({ value, onNumberClick, onClear, onCheck, checkDisabled, showNext }: InputControlsProps): React.ReactElement {
     const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
     return (
@@ -448,7 +405,8 @@ function InputControls({ value, onNumberClick, onClear, onCheck, checkDisabled, 
 
 // --- App Components ---
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function HomeScreen({ setMode, cardTickets, onDrawCard }: HomeScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function HomeScreen({ setMode, cardTickets, onDrawCard }: HomeScreenProps): React.ReactElement {
     return (
         <div style={styles.screenWrapper}>
             <div style={styles.ticketInfo}>GETチケット: {cardTickets}枚</div>
@@ -470,7 +428,8 @@ function HomeScreen({ setMode, cardTickets, onDrawCard }: HomeScreenProps): JSX.
 }
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function RewardScreen({ setMode }: RewardScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function RewardScreen({ setMode }: RewardScreenProps): React.ReactElement {
     return (
          <div style={styles.screenWrapper}>
             <div style={styles.newCardContainer}>
@@ -487,7 +446,8 @@ function RewardScreen({ setMode }: RewardScreenProps): JSX.Element {
 }
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): React.ReactElement {
     const [dan, setDan] = useState<number | null>(null);
     const [index, setIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
@@ -583,7 +543,8 @@ function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): JSX.E
 }
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function TestScreen({ setMode, onPerfectScore }: TestScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactElement {
     const [problems, setProblems] = useState<{ a: number; b: number }[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
@@ -689,7 +650,8 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): JSX.Element {
 }
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function GalleryScreen({ cards, setMode }: GalleryScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function GalleryScreen({ cards, setMode }: GalleryScreenProps): React.ReactElement {
     return (
         <div style={styles.screenWrapper}>
             <div style={styles.galleryContainer}>
@@ -715,7 +677,8 @@ function GalleryScreen({ cards, setMode }: GalleryScreenProps): JSX.Element {
 }
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function NewCardScreen({ newCard, setMode }: NewCardScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function NewCardScreen({ newCard, setMode }: NewCardScreenProps): React.ReactElement {
     if (!newCard) return <></>;
     return (
         <div style={styles.screenWrapper}>
@@ -737,10 +700,9 @@ function NewCardScreen({ newCard, setMode }: NewCardScreenProps): JSX.Element {
 }
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-function ErrorScreen({ error, setMode, setError }: ErrorScreenProps): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function ErrorScreen({ error, setMode, setError }: ErrorScreenProps): React.ReactElement {
     if (!error) return <></>;
-
-    const isApiKeyError = error.message.includes('APIキーがサーバーに設定されていません');
 
     const handleGoHome = () => {
         setError(null);
@@ -750,38 +712,21 @@ function ErrorScreen({ error, setMode, setError }: ErrorScreenProps): JSX.Elemen
     return (
         <div style={styles.screenWrapper}>
             <h2 style={{...styles.resultHeader, color: '#d32f2f' }}>エラーが発生しました</h2>
-            
-            {isApiKeyError && (
-                <div style={styles.errorDeveloperInfo}>
-                    <h3 style={{ color: '#e65100', marginTop: 0 }}>開発者の方へ</h3>
-                    <p>エラーメッセージに「APIキーが設定されていません」と表示されています。</p>
-                    <p>これは、アプリがデプロイされているサーバー（Vercelなど）にAPIキーが設定されていないことが原因です。</p>
-                    <p><strong>解決方法:</strong></p>
-                    <ol style={{paddingLeft: '20px', lineHeight: 1.6}}>
-                        <li>Vercelのプロジェクトダッシュボードを開きます。</li>
-                        <li><strong>Settings</strong> タブ → <strong>Environment Variables</strong> に移動します。</li>
-                        <li><code>API_KEY</code> という名前で、あなたのGoogle AI StudioのAPIキーを値として追加します。</li>
-                        <li>設定を保存した後、プロジェクトを<strong>再デプロイ</strong>してください。</li>
-                    </ol>
-                </div>
-            )}
-
             <div style={styles.errorDetails}>
                 <strong>エラー詳細:</strong> {error.message}
             </div>
-            
             <button style={{...styles.button, ...styles.secondaryButton}} onClick={handleGoHome}>ホームにもどる</button>
         </div>
     );
 }
 
 // FIX: Changed from const arrow function to a standard function component declaration to resolve parsing errors.
-function App(): JSX.Element {
+// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
+function App(): React.ReactElement {
     const [mode, setMode] = useState<Mode>('home');
     const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(() => getCollectedCards());
     const [cardTickets, setCardTickets] = useState<number>(() => getCardTickets());
     const [newlyCollectedCard, setNewlyCollectedCard] = useState<TrainCardData | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const isInitialMount = useRef(true);
 
@@ -803,59 +748,45 @@ function App(): JSX.Element {
         setMode('reward');
     }, []);
     
-    const handleDrawCard = useCallback(async () => {
+    const handleDrawCard = useCallback(() => {
         if (cardTickets <= 0) return;
 
-        setIsLoading(true);
-        setMode('loading');
-
-        let trainNameToGenerate: string | null = null;
+        let trainToGenerate: (typeof TRAIN_DATA)[0] | null = null;
         let nextTrainDataIndex = getNextTrainIndex();
 
         // Loop to find the next train that the user hasn't collected yet.
-        while (nextTrainDataIndex < TRAIN_LIST.length) {
-            const potentialTrainName = TRAIN_LIST[nextTrainDataIndex];
-            const alreadyCollected = collectedCards.some(card => card.name === potentialTrainName);
+        while (nextTrainDataIndex < TRAIN_DATA.length) {
+            const potentialTrain = TRAIN_DATA[nextTrainDataIndex];
+            const alreadyCollected = collectedCards.some(card => card.name === potentialTrain.name);
             if (!alreadyCollected) {
-                trainNameToGenerate = potentialTrainName;
+                trainToGenerate = potentialTrain;
                 break; // Found a new train to generate.
             }
             nextTrainDataIndex++; // This one is already collected, check the next.
         }
 
         // If no new train was found, it means all cards have been collected.
-        if (!trainNameToGenerate) {
-            setIsLoading(false);
+        if (!trainToGenerate) {
             setMode('gallery');
             setTimeout(() => alert("すべての電車カードを集めました！おめでとう！"), 100);
             return;
         }
         
-        // Decrement the ticket just before the API call.
         setCardTickets(prev => prev - 1);
 
-        try {
-            const cardData = await generateTrainCard(trainNameToGenerate);
-            const newCard: TrainCardData = {
-                id: Date.now(),
-                name: trainNameToGenerate,
-                ...cardData,
-            };
+        const newCard: TrainCardData = {
+            id: Date.now(),
+            name: trainToGenerate.name,
+            line: trainToGenerate.line,
+            description: trainToGenerate.description,
+            imageUrl: trainToGenerate.imageUrl,
+        };
 
-            setNewlyCollectedCard(newCard);
-            setCollectedCards(prevCards => [...prevCards, newCard]);
-            saveNextTrainIndex(nextTrainDataIndex + 1);
-            setMode('newCard');
+        setNewlyCollectedCard(newCard);
+        setCollectedCards(prevCards => [...prevCards, newCard]);
+        saveNextTrainIndex(nextTrainDataIndex + 1);
+        setMode('newCard');
 
-        } catch (err) {
-            console.error("カードの生成に失敗しました:", err);
-            setError(err as Error);
-            setMode('error');
-            // IMPORTANT: Give the ticket back to the user on failure.
-            setCardTickets(prev => prev + 1);
-        } finally {
-            setIsLoading(false);
-        }
     }, [cardTickets, collectedCards]);
 
 
@@ -871,8 +802,6 @@ function App(): JSX.Element {
                 return <RewardScreen setMode={setMode} />;
             case 'newCard':
                 return <NewCardScreen newCard={newlyCollectedCard} setMode={setMode} />;
-            case 'loading':
-                 return <div style={styles.loadingText}>あたらしいカードをゲット中...</div>;
             case 'error':
                  return <ErrorScreen error={error} setMode={setMode} setError={setError} />;
             case 'home':
