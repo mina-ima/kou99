@@ -346,6 +346,8 @@ function saveToStorage<T>(key: string, value: T) {
         localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
     } catch (e) {
         console.error(`Failed to save ${key} to localStorage`, e);
+        // Re-throw the error so it can be caught by the transactional logic
+        throw e;
     }
 }
 
@@ -728,25 +730,23 @@ function App(): React.ReactElement {
     const [cardTickets, setCardTickets] = useState<number>(() => getCardTickets());
     const [newlyCollectedCard, setNewlyCollectedCard] = useState<TrainCardData | null>(null);
     const [error, setError] = useState<Error | null>(null);
-    const isInitialMount = useRef(true);
-
-    useEffect(() => {
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
-            return;
-        }
-        saveCollectedCards(collectedCards);
-    }, [collectedCards]);
-
-     useEffect(() => {
-        saveCardTickets(cardTickets);
-    }, [cardTickets]);
-
 
     const handlePerfectScore = useCallback(() => {
-        setCardTickets(prev => prev + 1);
-        setMode('reward');
-    }, []);
+        const newTicketCount = cardTickets + 1;
+        try {
+            // First, try to save the new state to persistent storage.
+            saveCardTickets(newTicketCount);
+            
+            // If saving succeeds, update the component's state.
+            setCardTickets(newTicketCount);
+            setMode('reward');
+        } catch (e) {
+            // If saving fails, show an error and don't change the state.
+            console.error("Failed to save new ticket data", e);
+            setError(new Error('チケットの保存に失敗しました。もう一度試してください。'));
+            setMode('error');
+        }
+    }, [cardTickets]);
     
     const handleDrawCard = useCallback(() => {
         if (cardTickets <= 0) return;
@@ -772,8 +772,6 @@ function App(): React.ReactElement {
             return;
         }
         
-        setCardTickets(prev => prev - 1);
-
         const newCard: TrainCardData = {
             id: Date.now(),
             name: trainToGenerate.name,
@@ -782,11 +780,29 @@ function App(): React.ReactElement {
             imageUrl: trainToGenerate.imageUrl,
         };
 
-        setNewlyCollectedCard(newCard);
-        setCollectedCards(prevCards => [...prevCards, newCard]);
-        saveNextTrainIndex(nextTrainDataIndex + 1);
-        setMode('newCard');
+        const newTicketCount = cardTickets - 1;
+        const newCollectedCards = [...collectedCards, newCard];
+        const newNextTrainIndex = nextTrainDataIndex + 1;
 
+        try {
+            // Try to save all changes to persistent storage first.
+            // This makes the operation more "atomic".
+            saveCardTickets(newTicketCount);
+            saveCollectedCards(newCollectedCards);
+            saveNextTrainIndex(newNextTrainIndex);
+            
+            // If all saves are successful, update the React state to reflect on UI.
+            setCardTickets(newTicketCount);
+            setCollectedCards(newCollectedCards);
+            setNewlyCollectedCard(newCard);
+            setMode('newCard');
+        } catch (e) {
+            // If any save fails, we don't update the state and show an error.
+            // The user does not lose their ticket.
+            console.error("Failed to save new card data", e);
+            setError(new Error('カードの保存に失敗しました。チケットは消費されていません。もう一度試してください。'));
+            setMode('error');
+        }
     }, [cardTickets, collectedCards]);
 
 
