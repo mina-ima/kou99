@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { GoogleGenAI, Type, Modality } from "@google/genai";
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -286,52 +285,28 @@ const saveNextTrainIndex = (index: number) => {
 };
 
 
-// --- Gemini API Helper ---
+// --- API Helper ---
 const generateTrainCard = async (trainName: string): Promise<Omit<TrainCardData, 'id' | 'name'>> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-    // 1. Generate Text Data
-    const textResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `日本の電車「${trainName}」について、以下の情報をJSON形式で教えてください。走行路線は'line'、車両の特徴は'description'として、子供にも分かりやすい50字程度の簡単な言葉で説明してください。`,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    line: { type: Type.STRING, description: '走行路線' },
-                    description: { type: Type.STRING, description: '車両の特徴' }
-                },
-                required: ['line', 'description'],
-            },
+    const response = await fetch('/api/generate-card', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ trainName }),
     });
-    const { line, description } = JSON.parse(textResponse.text);
 
-    // 2. Generate Image
-    const imageResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-            parts: [{ text: `日本の電車「${trainName}」の鮮明でリアルな写真。横からの視点で、晴れた日の駅のホームに停車している様子。背景は少しぼかす。` }],
-        },
-        config: {
-            responseModalities: [Modality.IMAGE],
-        },
-    });
-    
-    let imageUrl = '';
-    for (const part of imageResponse.candidates[0].content.parts) {
-        if (part.inlineData) {
-            const base64ImageBytes: string = part.inlineData.data;
-            imageUrl = `data:image/png;base64,${base64ImageBytes}`;
-        }
-    }
-    
-    if (!imageUrl) {
-        throw new Error('Image generation failed.');
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '不明なエラーが発生しました。' }));
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || 'サーバーからカードデータの取得に失敗しました。');
     }
 
-    return { line, description, imageUrl };
+    const data = await response.json();
+    return {
+        line: data.line,
+        description: data.description,
+        imageUrl: data.imageUrl,
+    };
 };
 
 // --- Input Controls Component ---
@@ -642,13 +617,6 @@ const App = () => {
         setIsLoading(true);
         setMode('loading');
 
-        if (!process.env.API_KEY) {
-            alert("APIキーが設定されていません。アプリの管理者に連絡してください。");
-            setMode('home');
-            setIsLoading(false);
-            return;
-        }
-
         try {
             const nextIndex = getNextTrainIndex();
             if (nextIndex >= TRAIN_LIST.length) {
@@ -679,7 +647,7 @@ const App = () => {
 
         } catch (error) {
             console.error("カードの生成に失敗しました:", error);
-            alert(`カードの取得中にエラーが発生しました。\n時間をおいてもう一度試してください。`);
+            alert(`カードの取得中にエラーが発生しました。\n詳細: ${error.message}\n時間をおいてもう一度試してください。`);
             setMode('home');
         } finally {
             setIsLoading(false);
