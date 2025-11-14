@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -296,9 +297,13 @@ const generateTrainCard = async (trainName: string): Promise<Omit<TrainCardData,
     });
 
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: '不明なエラーが発生しました。' }));
+        const errorData = await response.json().catch(() => ({ 
+            error: 'サーバーからエラー応答がありましたが、詳細の解析に失敗しました。',
+            details: `HTTPステータス: ${response.status}`
+        }));
         console.error('API Error:', errorData);
-        throw new Error(errorData.error || 'サーバーからカードデータの取得に失敗しました。');
+        const errorMessage = `${errorData.error || 'サーバーエラー'}${errorData.details ? ` (${errorData.details})` : ''}`;
+        throw new Error(errorMessage);
     }
 
     const data = await response.json();
