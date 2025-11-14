@@ -287,14 +287,14 @@ export const TRAIN_DATA = [
         name: '指宿のたまて箱',
         line: 'JR九州 指宿枕崎線',
         description: '浦島太郎伝説がテーマの観光特急。海側が白、山側が黒というユニークなデザインで、ドアから煙が出る仕掛けも！',
-        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/e1122a27-a065-4f36-9b62-38d781b0f5d5.jpeg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Ibusuki-no-tamatebako-1.jpg/1024px-Ibusuki-no-tamatebako-1.jpg'
     },
     {
         id: 40,
         name: '或る列車',
         line: 'JR九州',
         description: '幻の豪華列車を蘇らせた、金と黒のスイーツトレイン。九州の食材を使った絶品スイーツを味わいながら旅ができる。',
-        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/1c183921-12bf-466d-8e47-0b198124b898.jpeg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/JR_Kyushu_Kilo_47_series_DMU_%22Aru_Ressha%22_at_Oita_station_20151121.JPG/1024px-JR_Kyushu_Kilo_47_series_DMU_%22Aru_Ressha%22_at_Oita_station_20151121.JPG'
     },
     {
         id: 41,
@@ -385,14 +385,14 @@ export const TRAIN_DATA = [
         name: 'あをによし',
         line: '近鉄（大阪・京都 - 奈良）',
         description: '奈良の都をイメージした紫色の美しい観光特急。正倉院の宝物をモチーフにした内装がとっても豪華。',
-        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/bec2954a-a924-4f4a-814d-d195a947475d.jpeg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Kintetsu_19200_series_EMU_Awoniyoshi_at_Kintetsu-Nara_station_20220501.jpg/1024px-Kintetsu_19200_series_EMU_Awoniyoshi_at_Kintetsu-Nara_station_20220501.jpg'
     },
     {
         id: 54,
         name: 'リニアモーターカー',
         line: '中央新幹線（予定）',
         description: '磁石の力で浮いて走る未来の乗り物。時速500kmを超えるスピードで、東京と名古屋をあっという間に結ぶ予定だよ。',
-        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/7304bd21-1c39-445a-a567-0c7f29b0a880.jpeg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/SCMaglev-L0-A07.jpg/1024px-SCMaglev-L0-A07.jpg'
     },
     {
         id: 55,
@@ -435,5 +435,12 @@ export const TRAIN_DATA = [
         line: '伊豆急行線・JR北海道',
         description: '美しいロイヤルブルーの車体が特徴の豪華観光列車。伊豆や北海道の美しい景色の中、音楽や美味しい食事を楽しむ贅沢な旅ができる。',
         imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/THE_ROYAL_EXPRESS_at_Sapporo_station.jpg/1024px-THE_ROYAL_EXPRESS_at_Sapporo_station.jpg'
+    },
+    {
+        id: 61,
+        name: '四国まんなか千年ものがたり',
+        line: 'JR四国 土讃線',
+        description: '自然豊かな土讃線を走る観光列車。大歩危・小歩危の渓谷美を眺めながら、地元の食材を使った上品な料理が楽しめる。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Shikoku_Mannaka_Sennen_Monogatari_at_Tadotsu_Station_20170402.jpg/1024px-Shikoku_Mannaka_Sennen_Monogatari_at_Tadotsu_Station_20170402.jpg'
     }
 ];
