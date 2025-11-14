@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { TRAIN_DATA } from './train-data';
+import { initDB, saveImage, getImage } from './db';
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -367,6 +368,64 @@ const getCardTickets = (): number => getFromStorage('cardTickets', 0);
 const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', tickets);
 
 
+// --- Reusable Card Image Component ---
+function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSSProperties, alt: string }) {
+    const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+    useEffect(() => {
+        let objectUrl: string | null = null;
+        let isMounted = true;
+
+        async function loadImage() {
+            try {
+                // 1. Try to get from DB
+                const blob = await getImage(card.name);
+                if (isMounted) {
+                    if (blob) {
+                        objectUrl = URL.createObjectURL(blob);
+                        setImageSrc(objectUrl);
+                    } else {
+                        // 2. Fallback to network URL
+                        setImageSrc(card.imageUrl);
+                        // 3. Cache the image in the background for next time
+                        try {
+                            const response = await fetch(card.imageUrl);
+                            if (!response.ok) throw new Error('Network response was not ok.');
+                            const newBlob = await response.blob();
+                            await saveImage(card.name, newBlob);
+                        } catch (cacheError) {
+                            console.error(`Failed to cache image for ${card.name}:`, cacheError);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error(`Failed to load image for ${card.name}:`, err);
+                if(isMounted) {
+                    // Fallback to original URL on DB error
+                    setImageSrc(card.imageUrl);
+                }
+            }
+        }
+
+        loadImage();
+
+        return () => {
+            isMounted = false;
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [card.name, card.imageUrl]);
+
+    // Render a placeholder while loading
+    if (!imageSrc) {
+        return <div style={{...style, backgroundColor: '#eee'}} />;
+    }
+
+    return <img src={imageSrc} style={style} alt={alt} />;
+}
+
+
 // --- Input Controls Component ---
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
 // FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
@@ -670,7 +729,7 @@ function GalleryScreen({ cards, setMode }: GalleryScreenProps): React.ReactEleme
                     ) : (
                         cards.map(card => (
                             <div key={card.id} style={styles.trainCard}>
-                                <img src={card.imageUrl} alt={card.name} style={styles.trainCardImage} />
+                                <CardImage card={card} style={styles.trainCardImage} alt={card.name} />
                                 <h3 style={styles.trainCardName}>{card.name}</h3>
                                 <p style={styles.trainCardInfo}>路線: {card.line}</p>
                                 <p style={styles.trainCardInfo}>{card.description}</p>
@@ -693,7 +752,7 @@ function NewCardScreen({ newCard, setMode }: NewCardScreenProps): React.ReactEle
             <div style={styles.newCardContainer}>
                 <h2 style={styles.resultHeader}>やったね！あたらしい電車カードをゲット！</h2>
                 <div style={{...styles.trainCard, ...styles.newCardSpotlight}}>
-                    <img src={newCard.imageUrl} alt={newCard.name} style={styles.trainCardImage} />
+                    <CardImage card={newCard} style={styles.trainCardImage} alt={newCard.name} />
                     <h3 style={styles.trainCardName}>{newCard.name}</h3>
                     <p style={styles.trainCardInfo}>路線: {newCard.line}</p>
                     <p style={styles.trainCardInfo}>{newCard.description}</p>
@@ -776,6 +835,14 @@ function App(): React.ReactElement {
     const [error, setError] = useState<Error | null>(null);
     const [cardToDraw, setCardToDraw] = useState<TrainCardData | null>(null);
 
+    useEffect(() => {
+        initDB().catch(err => {
+            console.error("Failed to initialize DB:", err);
+            setError(new Error('データベースの初期化に失敗しました。アプリが正常に動作しない可能性があります。'));
+            setMode('error');
+        });
+    }, []);
+
     const handlePerfectScore = useCallback(() => {
         const newTicketCount = cardTickets + 1;
         try {
@@ -794,19 +861,28 @@ function App(): React.ReactElement {
         setMode('error');
     }, []);
     
-    const handleDrawSuccess = useCallback((newCard: TrainCardData) => {
-        const drawnTrainIndex = TRAIN_DATA.findIndex(train => train.name === newCard.name);
-        
-        if (drawnTrainIndex === -1) {
-            handleDrawError(new Error('内部エラー: カードデータが見つかりませんでした。'));
-            return;
-        }
-
-        const newTicketCount = cardTickets - 1;
-        const newCollectedCards = [...collectedCards, newCard];
-        const newNextTrainIndex = drawnTrainIndex + 1;
-
+    const handleDrawSuccess = useCallback(async (newCard: TrainCardData) => {
         try {
+            // Step 1: Download and save the image to IndexedDB
+            const response = await fetch(newCard.imageUrl);
+            if (!response.ok) {
+                throw new Error(`画像のダウンロードに失敗しました: ${response.statusText}`);
+            }
+            const imageBlob = await response.blob();
+            // Use card name as a unique key for the image
+            await saveImage(newCard.name, imageBlob);
+    
+            // Step 2: Update local storage and state
+            const drawnTrainIndex = TRAIN_DATA.findIndex(train => train.name === newCard.name);
+            
+            if (drawnTrainIndex === -1) {
+                throw new Error('内部エラー: カードデータが見つかりませんでした。');
+            }
+    
+            const newTicketCount = cardTickets - 1;
+            const newCollectedCards = [...collectedCards, newCard];
+            const newNextTrainIndex = drawnTrainIndex + 1;
+    
             saveCardTickets(newTicketCount);
             saveCollectedCards(newCollectedCards);
             saveNextTrainIndex(newNextTrainIndex);
@@ -815,10 +891,11 @@ function App(): React.ReactElement {
             setCollectedCards(newCollectedCards);
             setNewlyCollectedCard(newCard);
             setMode('newCard');
+    
         } catch (e) {
-            console.error("Failed to save new card data", e);
-            setError(new Error('カードの保存に失敗しました。チケットは消費されていません。もう一度試してください。'));
-            setMode('error');
+            console.error("Failed to draw and save new card:", e);
+            const userError = new Error('カードの保存に失敗しました。ネットワーク接続を確認してください。チケットは消費されていません。');
+            handleDrawError(userError);
         }
     }, [cardTickets, collectedCards, handleDrawError]);
     
