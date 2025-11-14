@@ -159,5 +159,12 @@ export const TRAIN_DATA = [
         line: 'JR九州（九州全域）',
         description: '九州7県を5つのルートで巡る特別な列車。世界で36番目に大きい島・九州で、乗客に感謝を届ける旅をする。',
         imageDataUrl: createSvgDataUrl('36ぷらす3', '#000000')
+    },
+    {
+        id: 23,
+        name: 'HC85系ひだ・南紀',
+        line: 'JR東海 高山本線・紀勢本線',
+        description: 'エンジンで発電した電気で走る、新しいハイブリッド特急。静かで環境にやさしく、乗り心地も抜群！',
+        imageDataUrl: createSvgDataUrl('HC85系ひだ・南紀', '#007f4e')
     }
 ];

@@ -4,7 +4,6 @@ export const config = {
 };
 
 import { GoogleGenAI, Modality } from "@google/genai";
-import { TRAIN_DATA } from '../train-data';
 
 // POSTリクエストを処理するハンドラ関数
 export default async function handler(req: Request) {
@@ -33,20 +32,10 @@ export default async function handler(req: Request) {
             headers: { 'Content-Type': 'application/json' },
         });
     }
-
-    // 1. Get Text Data from static file
-    const trainInfo = TRAIN_DATA.find(train => train.name === trainName);
-
-    if (!trainInfo) {
-         return new Response(JSON.stringify({ error: `Train data for ${trainName} not found.` }), {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    }
     
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    // 2. Generate Image
+    // Generate Image
     const imageResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -73,16 +62,11 @@ export default async function handler(req: Request) {
     }
     
     if (!imageUrl) {
-        // If image generation fails, throw an error so the frontend can handle it
         throw new Error('画像の生成に失敗しました。AIが安全でないと判断したか、一時的な問題が発生した可能性があります。');
     }
 
     // 成功レスポンスを返す
-    return new Response(JSON.stringify({ 
-        line: trainInfo.line, 
-        description: trainInfo.description, 
-        imageUrl 
-    }), {
+    return new Response(JSON.stringify({ imageUrl }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

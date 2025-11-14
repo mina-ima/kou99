@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { TRAIN_DATA } from './train-data';
+import { initDB, saveImage, getImage } from './db';
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -263,7 +264,7 @@ type TrainCardData = {
     name: string;
     line: string;
     description: string;
-    imageDataUrl: string; // Changed from imageUrl to imageDataUrl
+    imageDataUrl: string;
 };
 
 type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'reward' | 'drawingCard';
@@ -300,6 +301,7 @@ interface TestScreenProps {
 
 interface GalleryScreenProps {
     cards: TrainCardData[];
+    totalCount: number;
     setMode: (mode: Mode) => void;
 }
 
@@ -344,10 +346,38 @@ const getCardTickets = (): number => getFromStorage('cardTickets', 0);
 const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', tickets);
 
 
-// --- Reusable Card Image Component (Simplified) ---
+// --- Reusable Card Image Component ---
 function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSSProperties, alt: string }) {
-    // The image data is now directly available, so no loading logic is needed.
-    return <img src={card.imageDataUrl} style={style} alt={alt} />;
+    const [imageUrl, setImageUrl] = useState(card.imageDataUrl); // Start with placeholder
+
+    useEffect(() => {
+        let objectUrl: string | null = null;
+
+        const loadImage = async () => {
+            try {
+                const imageBlob = await getImage(card.id.toString());
+                if (imageBlob) {
+                    objectUrl = URL.createObjectURL(imageBlob);
+                    setImageUrl(objectUrl);
+                } else {
+                    setImageUrl(card.imageDataUrl);
+                }
+            } catch (error) {
+                console.error("Error loading image from DB, using placeholder.", error);
+                setImageUrl(card.imageDataUrl);
+            }
+        };
+
+        loadImage();
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [card.id, card.imageDataUrl]);
+
+    return <img src={imageUrl} style={style} alt={alt} />;
 }
 
 
@@ -574,12 +604,12 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
     );
 }
 
-function GalleryScreen({ cards, setMode }: GalleryScreenProps): React.ReactElement {
+function GalleryScreen({ cards, totalCount, setMode }: GalleryScreenProps): React.ReactElement {
     const sortedCards = [...cards].sort((a, b) => a.id - b.id);
 
     return (
         <div style={styles.galleryContainer}>
-            <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length}/{TRAIN_DATA.length})</h2>
+            <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length}/{totalCount})</h2>
             <div style={styles.galleryGrid}>
                 {sortedCards.map(card => (
                     <div key={card.id} style={styles.trainCard}>
@@ -640,13 +670,79 @@ function DrawingCardScreen({ onSuccess, cardToDraw }: DrawingCardScreenProps): R
     );
 }
 
+// Helper to convert a base64 data URL to a Blob
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    const res = await fetch(dataUrl);
+    return res.blob();
+}
+
+
 function App() {
     const [mode, setMode] = useState<Mode>('home');
     const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(getCollectedCards);
+    const [masterTrainList, setMasterTrainList] = useState<TrainCardData[]>(() => getFromStorage('masterTrainList', TRAIN_DATA));
     const [nextTrainIndex, setNextTrainIndex] = useState<number>(getNextTrainIndex);
     const [cardTickets, setCardTickets] = useState<number>(getCardTickets);
     const [newCard, setNewCard] = useState<TrainCardData | null>(null);
     const [cardToDraw, setCardToDraw] = useState<TrainCardData | null>(null);
+    
+    // Background image caching logic
+    const cacheTrainImages = useCallback(async (trains: TrainCardData[]) => {
+        console.log('Starting background image sync...');
+        await initDB(); // Ensure DB is ready
+        for (const train of trains) {
+            try {
+                const existingImage = await getImage(train.id.toString());
+                if (!existingImage) {
+                    console.log(`Cache miss for ${train.name}. Fetching...`);
+                    const response = await fetch('/api/generate-card', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trainName: train.name }),
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to generate card');
+                    }
+
+                    const data = await response.json();
+                    if (data.imageUrl) {
+                        const blob = await dataUrlToBlob(data.imageUrl);
+                        await saveImage(train.id.toString(), blob);
+                        console.log(`Successfully cached image for ${train.name}.`);
+                    }
+                }
+            } catch (error) {
+                console.error(`Failed to cache image for ${train.name}:`, error);
+            }
+        }
+        console.log('Background image sync finished.');
+    }, []);
+
+    // Effect for initializing and syncing data on app start
+    useEffect(() => {
+        const syncData = async () => {
+            try {
+                const response = await fetch('/api/get-train-list');
+                if (!response.ok) throw new Error('Network response was not ok.');
+                
+                const latestList: TrainCardData[] = await response.json();
+                
+                setMasterTrainList(latestList);
+                saveToStorage('masterTrainList', latestList);
+                
+                // Start background caching but don't wait for it to finish
+                cacheTrainImages(latestList);
+
+            } catch (error) {
+                console.error("Failed to sync new train data, using cached/initial data.", error);
+                // The app will continue to function with the data loaded in useState initialiser
+            }
+        };
+        syncData();
+    }, [cacheTrainImages]);
+
 
     const handlePerfectScore = useCallback(() => {
         setCardTickets(prev => {
@@ -660,7 +756,7 @@ function App() {
     const handleDrawCard = useCallback(() => {
         if (cardTickets <= 0) return;
         
-        const uncollectedTrains = TRAIN_DATA.filter(
+        const uncollectedTrains = masterTrainList.filter(
             train => !collectedCards.some(card => card.name === train.name)
         );
 
@@ -669,39 +765,33 @@ function App() {
             return;
         }
 
-        // Use the saved index to ensure we get a new card each time until we run out
-        const trainToDraw = TRAIN_DATA[nextTrainIndex % TRAIN_DATA.length];
+        const trainToDraw = masterTrainList[nextTrainIndex % masterTrainList.length];
 
         setCardToDraw(trainToDraw);
         setMode('drawingCard');
 
-    }, [cardTickets, collectedCards, nextTrainIndex]);
+    }, [cardTickets, collectedCards, nextTrainIndex, masterTrainList]);
     
     const handleDrawSuccess = useCallback((drawnCard: TrainCardData) => {
-        // Transaction-like update
         try {
             const currentTickets = getCardTickets();
             if (currentTickets <= 0) {
-                // Should not happen, but as a safeguard
                 throw new Error("No tickets to draw a card.");
             }
             const newTickets = currentTickets - 1;
             
             const currentCards = getCollectedCards();
-            // Prevent duplicates
             const newCards = currentCards.some(c => c.name === drawnCard.name)
                 ? currentCards
                 : [...currentCards, drawnCard];
 
             const currentIndex = getNextTrainIndex();
-            const newIndex = (currentIndex + 1) % TRAIN_DATA.length;
+            const newIndex = (currentIndex + 1) % masterTrainList.length;
             
-            // Save all at once
             saveCardTickets(newTickets);
             saveCollectedCards(newCards);
             saveNextTrainIndex(newIndex);
             
-            // Update state
             setCardTickets(newTickets);
             setCollectedCards(newCards);
             setNextTrainIndex(newIndex);
@@ -710,11 +800,9 @@ function App() {
 
         } catch (e) {
             console.error("Card drawing transaction failed:", e);
-            // Since there's no network, errors are unlikely. If they happen,
-            // we just log it and go home without changing state.
              setMode('home');
         }
-    }, []);
+    }, [masterTrainList.length]);
 
     const renderScreen = () => {
         switch (mode) {
@@ -723,7 +811,7 @@ function App() {
             case 'test':
                 return <TestScreen setMode={setMode} onPerfectScore={handlePerfectScore} />;
             case 'gallery':
-                return <GalleryScreen cards={collectedCards} setMode={setMode} />;
+                return <GalleryScreen cards={collectedCards} totalCount={masterTrainList.length} setMode={setMode} />;
             case 'reward':
                 return <RewardScreen setMode={setMode} />;
             case 'drawingCard':
