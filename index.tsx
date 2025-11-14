@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { initDB, saveImage, getImage } from './db';
+import { TRAIN_DATA } from './train-data';
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -725,15 +726,10 @@ function App() {
         async function initializeApp() {
             try {
                 await initDB();
-                const response = await fetch('/api/get-train-list');
-                if (!response.ok) {
-                    throw new Error('電車のリストを取得できませんでした。');
-                }
-                const data = await response.json();
-                setMasterTrainList(data);
+                setMasterTrainList(TRAIN_DATA);
             } catch (err) {
                 console.error(err);
-                setError(err.message);
+                setError('アプリの初期化中にエラーが発生しました。');
             } finally {
                 setIsLoading(false);
             }

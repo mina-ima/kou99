@@ -91,21 +91,21 @@ export const TRAIN_DATA = [
         name: '東武スペーシアX',
         line: '東武日光線',
         description: 'カフェや個室もあって、まるで走るホテルのよう！日光や鬼怒川への特別な旅を演出してくれる豪華な特急。',
-        imageDataUrl: 'https://www.tobu.co.jp/spaciax/assets/img/index/guide_photo_01.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/Tobu_N100_series_EMU_SPACIA_X_20230715.jpg/1024px-Tobu_N100_series_EMU_SPACIA_X_20230715.jpg'
     },
     {
         id: 12,
         name: 'サンライズ出雲・瀬戸',
-        line: '寝台特급',
+        line: '寝台特急',
         description: '日本で唯一毎日走っている寝台列車。ベッドで眠りながら、東京から四国や山陰へ旅することができる。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqG9sNcfXjP4zdH5sjytWVyyzMko2lRFWFNsvktzMNrvGHqZBjHL2k8dNyJYjn8fzPbMuImU5Xbny1MqM23ArEjVFwpQkxTEwk2Buq-d72N8soIf5jK28M5fuWB4Koxul17ezPMJtkQ1PNr5iBTdT7-EX1_BLuYRSY1T0s90V8EilzBrWOC1eCNbqFQB1797IlJgsHvTFRndfblrBt_Pzt548QiiVXvDtfRLGDrYGK6Wfc38RGk8zFmxX-jYjqe9mKn5b6pTchCQWorSbFBzbVxGWEIwwBFPXRcHYaVPvfo0OQ/kiji0309_01.jpg?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/JRW_285_Sunrise_Seto_Izumo.jpg/1024px-JRW_285_Sunrise_Seto_Izumo.jpg'
     },
     {
         id: 13,
         name: 'サフィール踊り子',
         line: '東海道本線・伊東線など',
         description: '全席グリーン車以上で、窓から海の景色を楽しめる豪華な特急。おいしいラーメンが食べられるカフェもあるんだ。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Series-E257-NA11_Odoriko.jpg/960px-Series-E257-NA11_Odoriko.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/E261_series_RS1_Saphir_Odoriko_Kawasaki_20200314.jpg/1024px-E261_series_RS1_Saphir_Odoriko_Kawasaki_20200314.jpg'
     },
     {
         id: 14,
@@ -119,7 +119,7 @@ export const TRAIN_DATA = [
         name: 'ゆふいんの森',
         line: 'JR九州 久大本線',
         description: '森の中を走る高原リゾート列車。木のぬくもりあふれる車内で、美しい景色とおいしいスイーツが楽しめる。',
-        imageDataUrl: 'https://www.tabirai.net/s/planning/img/oita/yufuin-no-mori/main.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Yufuin-no-mori_Oita_station_201712.jpg/1024px-Yufuin-no-mori_Oita_station_201712.jpg'
     },
     {
         id: 16,
@@ -133,237 +133,265 @@ export const TRAIN_DATA = [
         name: 'POKÉMON with YOUトレイン',
         line: 'JR東日本 大船渡線',
         description: 'ピカチュウがいっぱいの楽しい列車！プレイルームもあって、親子でポケモンと遊びながら旅ができるよ。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqG_Arm9tnYFc1-v9veXxn_P_SkCFjagHLCrlmj7X1K9ZfKlKFTHlmIO0LAYIh6YZuCsMHKYR_aQbF_2bjR1jsWW5nIia8Ht6c_D1cn-pkasjUIaKzyR885m7vcZTJhFU0Pq7b0BnTdLCbzPjAtE2nF7gNmHJv2cf0zgWS172JaTmFfq3ZkviQ5He3fo6cz_NzXdhy7rOIuXJrZEjXmQyy6AI0vL5tf8blqfE55-kWUADyREpqXPV3Qvvm1B8FyOJmw3vfws1fWHA5Bgh25rgjmQD1gM4HpzZr4eq_7h8pzvWy/kv_slide_0003ph.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Pokemon_With_You_Train_at_Ichinoseki_Station_20171010.jpg/1024px-Pokemon_With_You_Train_at_Ichinoseki_Station_20171010.jpg'
     },
     {
         id: 18,
         name: 'あをによし',
         line: '近鉄（大阪・京都 - 奈良）',
         description: '奈良の都をイメージした紫色の美しい観光特急。正倉院の宝物をモチーフにした内装がとっても豪華。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqG9ip9WjEFdjK6ejN8iiB5-KIn844EtQzn6NG7IvsettuMJKnXskmrnmcPA3TjKKDtz0SWjRbjmS8s429uP2PAfxT9IYTihNFldNsafAjn0g_3IyKWHFT3hXQvMyr-wu8lhh-0EOmmvDgIjBalQ6CQltxcL9R0AUXDWPya9FlTy2_PfAhNlyI4elX-mFg6BXuXORJotASqXdvY0GBtcj5RGo=/202101.jpg?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Kintetsu_19200_series_EMU_Awoniyoshi_at_Kintetsu-Nara_station_20220501.jpg/1024px-Kintetsu_19200_series_EMU_Awoniyoshi_at_Kintetsu-Nara_station_20220501.jpg'
     },
     {
         id: 19,
         name: '伊予灘ものがたり',
         line: 'JR四国 予讃線',
         description: '愛媛の美しい伊予灘の海沿いを走る観光列車。夕日をイメージした茜色と黄金色の車体がロマンチック。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/tpvPBYOX1wpNVI1UoNSgEmIQiDwlOiicgeOHbCOwOSvLZpJiZoNGrWl4V6BGqdzN1g3x10n9-Tp8u7GgEgMxlHcrzz-W-zld6glFgrSPjoh6EcA0ORDwUTRAftPcmmOJawqdMfV4tCGOuBDbxlZu0E8lsUUyhIIZqvDexyu4ZVQ9ukVlGs8qYbyMvc8bnly4FA2HsjTZYRVJtAa1A9IFIDpATdVsa6QKOReGl5-OiQ3-UEOnj4r8sWB8owClF23s4yXmYv0lghCy_FKxdmc_w2Zun1gZVuJAJjWZE9xmRZHgXYCEWQQYOgJt981PLd3bWTWAE-feXe6NhoLmUwB3T6m1ThoZnctQEOKF5mUL0UJ8FXZ8jryZu5FD-ouKlNco/1200?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Iyonada_Monogatari_at_Matsuyama_station_20220402.jpg/1024px-Iyonada_Monogatari_at_Matsuyama_station_20220402.jpg'
     },
     {
         id: 20,
         name: 'SLやまぐち号',
         line: 'JR西日本 山口線',
         description: '力強い蒸気と大きな汽笛が迫力満点の蒸気機関車。レトロな客車に揺られて、タイムスリップ気分を味わえる。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqG99FYHZn-8OA-mR7gavTk04vu6bojj6cYs0oeXqcS151dg8q0HsHfg7EYghSgx5jU94bS1oPhzTBqrBAKN4Acw-IvQ40VZXtLFEq9XD6zUX2L8GkNUUi9-xYjYGiLrqLNIQjDAEU9dFwdhpU-9-jQ5A=/c571_main.jpg?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/JNR_C57_1_and_JNR_D51_200_SL_Yamaguchi_20171126.jpg/1024px-JNR_C57_1_and_JNR_D51_200_SL_Yamaguchi_20171126.jpg'
     },
     {
         id: 21,
         name: 'ろくもん',
         line: 'しなの鉄道',
         description: '真田家の家紋「六文銭」が名前の由来。長野の美味しい食材を使った料理を、美しい景色と共に楽しめる。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqGx5cm8knTLo61O84kVTxOan841a30-aIJSoqkmlQNsP4-Qv0KVqX9M9vYFUiwJk7TSg3Rsflo5-4bVaa4Z8ZGmv1Z32hZjyGn1bisbP5iqmgS-wU7KZJ-SHTqDHfxlGOsCCB-F5PdVm9BBdSVKnteifvNU9O4tFLFi2gQ40j2xoyXeDCpWWWeDMN6c6SDMKk-ZMdFamij6zlLNnSG1Pso98YIlBfEnkxllRF1Ra1lL7n0f_fgoQ3DD8sR0dmlE4tU7f89FaNrb7dkhFvbQudLo4=/Shinano_Railway_Series_115_Rokumon.jpg?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Shinano-Railway-115-S8-Rokumon-20140711.jpg/1024px-Shinano-Railway-115-S8-Rokumon-20140711.jpg'
     },
     {
         id: 22,
         name: '36ぷらす3',
         line: 'JR九州（九州全域）',
         description: '九州7県を5つのルートで巡る特別な列車。世界で36番目に大きい島・九州で、乗客に感謝を届ける旅をする。',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqGx5cm8knTLo61O84kVTxOan841a30-aIJSoqkmlQNsP4-Qv0KVqX9M9vYFUiwJk7TRChFTX8tDzqdzsA6YfQSP2D_TQlUKmxQ7lkAKZn8Zj87M8wm2RDU82vmIFN1Pv4RYVsWppXN31FUKYPTlY68-0UMdFe7X7o07KLkKqviYPiGk7Z1olRbzJnj0EY3vHGYyE_B9UeLpCxwdwnwIpM1dH2lPMFkpDzM8e2yC--66ohXJtBQ3UBCDVwqb3LbWwsRfCSaARMdpyJi9upBXdLLtY=/36plus3_oita_station.jpg?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/JR_Kyushu_787_series_BM363_36plus3.jpg/1024px-JR_Kyushu_787_series_BM363_36plus3.jpg'
     },
     {
         id: 23,
         name: 'HC85系ひだ・南紀',
         line: 'JR東海 高山本線・紀勢本線',
         description: 'エンジンで発電した電気で走る、新しいハイブリッド特急。静かで環境にやさしく、乗り心地も抜群！',
-        imageDataUrl: 'https://msp.c.yimg.jp/images/v2/FUTi93tXq405grZVGgDqG4lm3aLU4M-rOnrluqub0VkTtyp3Q_J9sY42nVZDTbF1fRYxXxQ95Rt4Rp7ZMi4PgHdF0YL0tXZFM7E6dcgzACz1s9R_elN424dBHtTui2SkdlQtqA_mNRMgRRwIuCBsR4IK82O0KcjKNDeitYEQxW9-sdbuzxN4RY9bUJfTnpyt/960.jpg?errorImage=false'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/JRC_HC85_Hida.jpg/1024px-JRC_HC85_Hida.jpg'
     },
     {
         id: 24,
         name: 'E7系新幹線かがやき',
         line: '北陸新幹線',
         description: '日本の伝統的な美しさをまとった新幹線。青と銅色のラインが特徴で、金沢まで速くて快適に連れて行ってくれる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Shinkansen_E7_at_Karuizawa_Station_2022_-_2.jpg/1024px-Shinkansen_E7_at_Karuizawa_Station_2022_-_2.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/E7_series_Shinkansen_at_Omiya_Station_20140315.jpg/1024px-E7_series_Shinkansen_at_Omiya_Station_20140315.jpg'
     },
     {
         id: 25,
         name: 'E6系新幹線こまち',
         line: '秋田新幹線',
         description: '情熱的な赤色が印象的なミニ新幹線。普通の線路も走れるので、秋田の街中を走り抜ける姿はとてもかっこいい。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/E6_series_Shinkansen_20130316_1.JPG/1024px-E6_series_Shinkansen_20130316_1.JPG'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/JRE-E6_in_Omiya_sta_202305.jpg/1024px-JRE-E6_in_Omiya_sta_202305.jpg'
     },
     {
         id: 26,
         name: '500系新幹線',
         line: '山陽新幹線（こだま）',
         description: '戦闘機のような未来的なデザインで、今でも大人気！かつては日本最速だった、伝説のかっこいい新幹線。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Shinkansen-500-v1.jpg/1024px-Shinkansen-500-v1.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/500_kei_V2_heisei_30_nen_7_gatsu_gōu_saigai_genchi_sōgō_chōsa_no_kikan_ōarai_chō_fukin_ni_te.jpg/1280px-500_kei_V2_heisei_30_nen_7_gatsu_gōu_saigai_genchi_sōgō_chōsa_no_kikan_ōarai_chō_fukin_ni_te.jpg'
     },
     {
         id: 27,
         name: '800系新幹線つばめ',
         line: '九州新幹線',
         description: '九州を走る、和風で落ち着いた雰囲気の新幹線。座席には金箔や九州の木が使われていて、とても豪華。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/JR_Kyushu_Shinkansen_800_series_U009_2016-11-23.jpg/1024px-JR_Kyushu_Shinkansen_800_series_U009_2016-11-23.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Shinkansen_800_U007_in_Hakata_station.jpg'
     },
     {
         id: 28,
         name: 'TRAIN SUITE 四季島',
         line: 'JR東日本',
         description: 'シャンパンゴールドに輝く、走る超高級ホテル。東日本の美しい自然や文化を巡る、夢のような旅ができる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/TRAIN_SUITE_SHIKI-SHIMA_in_Ueno_Sta._20161118.jpg/1024px-TRAIN_SUITE_SHIKI-SHIMA_in_Ueno_Sta._20161118.jpg'
+        imageDataUrl: 'https://www.nippon.com/en/ncommon/images/news/l10214.jpg'
     },
     {
         id: 29,
         name: 'トワイライトEXP瑞風',
         line: 'JR西日本',
         description: '「美しい日本の景色を走る」がコンセプトの豪華列車。展望デッキから風を感じながら、最高の景色を楽しめる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Twilight_Express_Mizukaze_XC86-101.jpg/1024px-Twilight_Express_Mizukaze_XC86-101.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Series87_TWILIGHT-EXPRESS-MIZUKAZE.jpg'
     },
     {
         id: 30,
         name: 'ななつ星 in 九州',
         line: 'JR九州',
         description: '古代漆色のボディが美しい、日本初の豪華クルーズトレイン。九州の自然や食、文化を味わう特別な旅へ出発！',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Seven_Stars_in_Kyushu_cruising_Hisatsu_Line.jpg/1024px-Seven_Stars_in_Kyushu_cruising_Hisatsu_Line.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/43/Seven_Stars_in_Kyushu_at_Aso_Station.jpg'
     },
     {
         id: 31,
         name: '成田エクスプレス',
         line: 'JR東日本（空港アクセス）',
         description: '成田空港と都心を結ぶ特急列車。赤と白のスタイリッシュなデザインで、世界中からのお客さんを迎える日本の玄関口。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/JR_East_E259_series_021.JPG/1024px-JR_East_E259_series_021.JPG'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/JR_East_E259_series_Ne002_202403.jpg/1024px-JR_East_E259_series_Ne002_202403.jpg'
     },
     {
         id: 32,
         name: 'E233系中央線',
         line: '中央線快速',
         description: '東京の真ん中をオレンジ色のラインで駆け抜ける通勤電車。毎日たくさんの人を安全に、速く運んでいる頼れる存在。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/JReast-E233-0-T31-20150117.jpg/1024px-JReast-E233-0-T31-20150117.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/JReast-E233-0-T15.jpg/1024px-JReast-E233-0-T15.jpg'
     },
     {
         id: 33,
         name: '京成スカイライナー',
         line: '京成電鉄（空港アクセス）',
         description: '風をイメージした流線型のデザインが特徴。在来線最速の時速160kmで、成田空港まであっという間！',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Keisei_AE_series_%282010%29_201912_01.jpg/1024px-Keisei_AE_series_%282010%29_201912_01.jpg'
+        imageDataUrl: 'https://i.imgur.com/XF9gY8q.jpeg'
     },
     {
         id: 34,
         name: '名鉄ミュースカイ',
         line: '名古屋鉄道（空港アクセス）',
         description: '青と白の爽やかなカラーリングで、中部国際空港セントレアへ向かう特急。大きな窓から伊勢湾の景色も見える。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Meitetsu_2000_series_EMU_011.jpg/1024px-Meitetsu_2000_series_EMU_011.jpg'
+        imageDataUrl: 'https://i.imgur.com/fA1B9sB.jpeg'
     },
     {
         id: 35,
         name: 'JR四国8600系',
         line: '予讃線（特急しおかぜ・いしづち）',
         description: '蒸気機関車をイメージしたデザインの四国の新しい特急。空気のバネでカーブも快適に走り抜ける。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/JR_Shikoku_8600_series_and_7200_series_Sanuki-Fuchu_Station_20171112.jpg/1024px-JR_Shikoku_8600_series_and_7200_series_Sanuki-Fuchu_Station_20171112.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/8600_Series_Shiokaze_by_naohiko_AOKI.jpg'
     },
     {
         id: 36,
         name: 'リゾートしらかみ',
         line: 'JR東日本 五能線',
         description: '世界自然遺産・白神山地と日本海の絶景を楽しめる観光列車。青池、ブナ、くまげらの3兄弟が走っているよ。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Resort-shirakami-buna.jpg/1024px-Resort-shirakami-buna.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/90/Resort_Shirakami_Kumagera_20101011.jpg'
     },
     {
         id: 37,
         name: 'SL人吉',
         line: 'JR九州 鹿児島本線',
         description: '100年以上前に作られた蒸気機関車が牽引する、本物のSL列車。展望ラウンジやミュージアムもあって楽しい。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/JNR_58654_SL_Hitoyoshi_2022-09-17.jpg/1024px-JNR_58654_SL_Hitoyoshi_2022-09-17.jpg'
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/JNR_Class_58654_and_SL_Hitoyoshi_Ohafu_50_701_and_702_in_20220917.jpg/1024px-JNR_Class_58654_and_SL_Hitoyoshi_Ohafu_50_701_and_702_in_20220917.jpg'
     },
     {
         id: 38,
-        name: 'A列車で行こう',
-        line: 'JR九州 三角線',
-        description: 'ジャズが流れる、大人の雰囲気漂う特急列車。ステンドグラスやバーカウンターがあり、おしゃれな旅ができる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/A-TRAIN_KIHA185.jpg/1024px-A-TRAIN_KIHA185.jpg'
+        name: 'サンダーバード',
+        line: 'JR西日本（大阪 - 敦賀）',
+        description: '大阪と北陸を結ぶ頼れる特急列車。ビジネスや観光で多くの人に利用されている。白いボディに青いラインが特徴。',
+        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/683_series_and_W7_series_at_Kanazawa_station.jpg/1024px-683_series_and_W7_series_at_Kanazawa_station.jpg'
     },
     {
         id: 39,
         name: '指宿のたまて箱',
         line: 'JR九州 指宿枕崎線',
         description: '浦島太郎伝説がテーマの観光特急。海側が白、山側が黒というユニークなデザインで、ドアから煙が出る仕掛けも！',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Ibusuki-no-tamatebako_20110328-001.jpg/1024px-Ibusuki-no-tamatebako_20110328-001.jpg'
+        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/e1122a27-a065-4f36-9b62-38d781b0f5d5.jpeg'
     },
     {
         id: 40,
         name: '或る列車',
         line: 'JR九州',
         description: '幻の豪華列車を蘇らせた、金と黒のスイーツトレイン。九州の食材を使った絶品スイーツを味わいながら旅ができる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/JR_Kyushu_KiloShi_47_Aru_Ressha.jpg/1024px-JR_Kyushu_KiloShi_47_Aru_Ressha.jpg'
+        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/1c183921-12bf-466d-8e47-0b198124b898.jpeg'
     },
     {
         id: 41,
         name: '富士回遊',
         line: 'JR東日本・富士急行',
         description: '新宿から富士山エリアへ乗り換えなしで行ける便利な特急。富士山の絶景に向かって走り、登山や観光に大活躍。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Series-E353_S115_Fuji-Excursion-19.jpg/1024px-Series-E353_S115_Fuji-Excursion-19.jpg'
+        imageDataUrl: 'https://i.imgur.com/GzB2Pvy.jpeg'
     },
     {
         id: 42,
         name: '湘南モノレール',
         line: '江の島線',
         description: 'ジェットコースターみたいにスリル満点！ぶら下がり式で、山の中を駆け抜け、アップダウンも激しい面白い乗り物。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Shonan_Monorail_5601_in_Kataseyama_sta._201602.jpg/1024px-Shonan_Monorail_5601_in_Kataseyama_sta._201602.jpg'
+        imageDataUrl: 'https://i.imgur.com/wO85x1L.jpeg'
     },
     {
         id: 43,
         name: 'とれいゆ つばさ',
         line: '山形新幹線',
         description: '世界初、足湯のある新幹線！車窓の景色を眺めながら温泉気分が味わえる、ユニークなリゾート列車だった。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Toreiyu_E3_R18_Yamagata.jpg/1024px-Toreiyu_E3_R18_Yamagata.jpg'
+        imageDataUrl: 'https://i.imgur.com/vHq0L94.jpeg'
     },
     {
         id: 44,
         name: '現美新幹線',
         line: '上越新幹線',
         description: '世界最速の美術館！車両ごとに違うアーティストの現代アートが飾られていた、走る芸術作品のような新幹線。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Genbi_Shinkansen_at_Echigo-Yuzawa_Station_201610.jpg/1024px-Genbi_Shinkansen_at_Echigo-Yuzawa_Station_201610.jpg'
+        imageDataUrl: 'https://i.imgur.com/z1q1oJJ.jpeg'
     },
     {
         id: 45,
         name: 'フルーティアふくしま',
         line: 'JR東日本 磐越西線',
         description: '走るカフェ！福島の美味しいフルーツを使ったオリジナルスイーツやジュースを、美しい景色と一緒に楽しめる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/FruiTea_Fukushima_719_Series_at_Aizu-Wakamatsu_Station_201510.jpg/1024px-FruiTea_Fukushima_719_Series_at_Aizu-Wakamatsu_Station_201510.jpg'
+        imageDataUrl: 'https://i.imgur.com/Y4Nnf0T.jpeg'
     },
     {
         id: 46,
         name: 'えちごトキめきリゾート雪月花',
         line: 'えちごトキめき鉄道',
         description: '国内最大級の窓から、新潟の山と海のパノラマビューが楽しめるリゾート列車。地元の食材を使った料理も絶品。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Echigo_Tokimeki_Railway_ET122-1000_20160423.jpg/1024px-Echigo_Tokimeki_Railway_ET122-1000_20160423.jpg'
+        imageDataUrl: 'https://i.imgur.com/K3Z0G7p.jpeg'
     },
     {
         id: 47,
         name: '海幸山幸',
         line: 'JR九州 日南線',
         description: '木のおもちゃのような、杉の木をたくさん使った特急列車。宮崎の神話をテーマに、海や山の景色の中を走る。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Umisachi-Yamasachi_at_Kitago_station.jpg/1024px-Umisachi-Yamasachi_at_Kitago_station.jpg'
+        imageDataUrl: 'https://i.imgur.com/83D7z0D.jpeg'
     },
     {
         id: 48,
         name: 'ハローキティはるか',
         line: 'JR西日本（空港アクセス）',
         description: 'ハローキティがいっぱいの、とってもかわいい特急列車。関西空港へ向かう旅が、わくわくする時間になるよ。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Hello_Kitty_Haruka_HA604_Kansai-Airport_Express.jpg/1024px-Hello_Kitty_Haruka_HA604_Kansai-Airport_Express.jpg'
+        imageDataUrl: 'https://i.imgur.com/uR1Jc14.jpeg'
     },
     {
         id: 49,
         name: 'ハローキティ新幹線',
         line: '山陽新幹線',
         description: 'ピンクのリボンがおしゃれな500系新幹線。車内もハローキティだらけで、写真スポットもたくさんあるよ。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Shinkansen-Hello-Kitty-500-V2-2018-07-26-14-16-11.jpg/1024px-Shinkansen-Hello-Kitty-500-V2-2018-07-26-14-16-11.jpg'
+        imageDataUrl: 'https://i.imgur.com/zW3Bv9F.jpeg'
     },
     {
         id: 50,
         name: '東武500系リバティ',
         line: '東武鉄道',
         description: '途中の駅で分割したり合体したりできる便利な特急。日光や会津など、色々な方面へ向かうことができる。',
-        imageDataUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Tobu_500_series_EMU_001.jpg/1024px-Tobu_500_series_EMU_001.jpg'
+        imageDataUrl: 'https://i.imgur.com/zT7d1QJ.jpeg'
+    },
+    {
+        id: 51,
+        name: 'オーシャンアロー',
+        line: 'JR西日本 紀勢本線',
+        description: 'イルカのようなユニークな顔が特徴の特急列車。太平洋の美しい景色を眺めながら、紀伊半島を駆け抜ける。',
+        imageDataUrl: 'https://i.imgur.com/1B3f4E8.jpeg'
+    },
+    {
+        id: 52,
+        name: 'うずしお',
+        line: 'JR四国 高徳線',
+        description: '徳島と高松を結ぶ、力強い走りが自慢のディーゼル特急。渦潮をイメージしたロゴマークがかっこいい。',
+        imageDataUrl: 'https://i.imgur.com/eP9rD9A.jpeg'
+    },
+    {
+        id: 53,
+        name: 'あをによし',
+        line: '近鉄（大阪・京都 - 奈良）',
+        description: '奈良の都をイメージした紫色の美しい観光特急。正倉院の宝物をモチーフにした内装がとっても豪華。',
+        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/bec2954a-a924-4f4a-814d-d195a947475d.jpeg'
+    },
+    {
+        id: 54,
+        name: 'リニアモーターカー',
+        line: '中央新幹線（予定）',
+        description: '磁石の力で浮いて走る未来の乗り物。時速500kmを超えるスピードで、東京と名古屋をあっという間に結ぶ予定だよ。',
+        imageDataUrl: 'https://storage.googleapis.com/aai-web-samples/custom-apps/7304bd21-1c39-445a-a567-0c7f29b0a880.jpeg'
     }
 ];
