@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { TRAIN_DATA } from './train-data';
-import { initDB, saveImage, getImage } from './db';
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -245,16 +244,6 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#3f51b5',
         fontWeight: 'bold',
     },
-    // Styles for Error Screen
-    errorDetails: {
-        backgroundColor: '#ffebee',
-        padding: '1rem',
-        borderRadius: '8px',
-        border: '1px solid #e57373',
-        maxWidth: '600px',
-        wordBreak: 'break-word',
-        margin: '1rem 0',
-    },
     ticketInfo: {
         position: 'absolute',
         top: 'clamp(1rem, 3vmin, 2rem)',
@@ -274,11 +263,10 @@ type TrainCardData = {
     name: string;
     line: string;
     description: string;
-    imageUrl: string;
+    imageDataUrl: string; // Changed from imageUrl to imageDataUrl
 };
 
-// Fix: Create a strict type for application mode state
-type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'error' | 'reward' | 'drawingCard';
+type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'reward' | 'drawingCard';
 
 // --- Component Prop Types ---
 interface InputControlsProps {
@@ -321,22 +309,13 @@ interface NewCardScreenProps {
 }
 
 interface DrawingCardScreenProps {
-    cardToDraw: TrainCardData;
     onSuccess: (card: TrainCardData) => void;
-    onError: (error: Error) => void;
+    cardToDraw: TrainCardData;
 }
-
-interface ErrorScreenProps {
-    error: Error | null;
-    setMode: (mode: Mode) => void;
-    setError: (error: Error | null) => void;
-}
-
 
 // --- LocalStorage Helpers ---
 const STORAGE_PREFIX = 'kou99app_';
 
-// FIX: Changed from const arrow function to a standard function declaration to resolve parsing errors.
 function getFromStorage<T>(key: string, defaultValue: T): T {
     try {
         const item = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
@@ -347,14 +326,11 @@ function getFromStorage<T>(key: string, defaultValue: T): T {
     }
 }
 
-// FIX: Changed from const arrow function to a standard function declaration to resolve parsing errors.
 function saveToStorage<T>(key: string, value: T) {
     try {
         localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
     } catch (e) {
         console.error(`Failed to save ${key} to localStorage`, e);
-        // Re-throw the error so it can be caught by the transactional logic
-        throw e;
     }
 }
 
@@ -368,67 +344,14 @@ const getCardTickets = (): number => getFromStorage('cardTickets', 0);
 const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', tickets);
 
 
-// --- Reusable Card Image Component ---
+// --- Reusable Card Image Component (Simplified) ---
 function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSSProperties, alt: string }) {
-    const [imageSrc, setImageSrc] = useState<string | null>(null);
-
-    useEffect(() => {
-        let objectUrl: string | null = null;
-        let isMounted = true;
-
-        async function loadImage() {
-            try {
-                // 1. Try to get from DB
-                const blob = await getImage(card.name);
-                if (isMounted) {
-                    if (blob) {
-                        objectUrl = URL.createObjectURL(blob);
-                        setImageSrc(objectUrl);
-                    } else {
-                        // 2. Fallback to network URL
-                        setImageSrc(card.imageUrl);
-                        // 3. Cache the image in the background for next time
-                        try {
-                            const response = await fetch(card.imageUrl);
-                            if (!response.ok) throw new Error('Network response was not ok.');
-                            const newBlob = await response.blob();
-                            await saveImage(card.name, newBlob);
-                        } catch (cacheError) {
-                            console.error(`Failed to cache image for ${card.name}:`, cacheError);
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error(`Failed to load image for ${card.name}:`, err);
-                if(isMounted) {
-                    // Fallback to original URL on DB error
-                    setImageSrc(card.imageUrl);
-                }
-            }
-        }
-
-        loadImage();
-
-        return () => {
-            isMounted = false;
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
-    }, [card.name, card.imageUrl]);
-
-    // Render a placeholder while loading
-    if (!imageSrc) {
-        return <div style={{...style, backgroundColor: '#eee'}} />;
-    }
-
-    return <img src={imageSrc} style={style} alt={alt} />;
+    // The image data is now directly available, so no loading logic is needed.
+    return <img src={card.imageDataUrl} style={style} alt={alt} />;
 }
 
 
 // --- Input Controls Component ---
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function InputControls({ value, onNumberClick, onClear, onCheck, checkDisabled, showNext }: InputControlsProps): React.ReactElement {
     const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
@@ -471,8 +394,6 @@ function InputControls({ value, onNumberClick, onClear, onCheck, checkDisabled, 
 }
 
 // --- App Components ---
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function HomeScreen({ setMode, cardTickets, onDrawCard }: HomeScreenProps): React.ReactElement {
     return (
         <div style={styles.screenWrapper}>
@@ -494,8 +415,6 @@ function HomeScreen({ setMode, cardTickets, onDrawCard }: HomeScreenProps): Reac
     );
 }
 
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function RewardScreen({ setMode }: RewardScreenProps): React.ReactElement {
     return (
          <div style={styles.screenWrapper}>
@@ -512,8 +431,6 @@ function RewardScreen({ setMode }: RewardScreenProps): React.ReactElement {
     );
 }
 
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): React.ReactElement {
     const [dan, setDan] = useState<number | null>(null);
     const [index, setIndex] = useState(0);
@@ -530,416 +447,276 @@ function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): React
             setFeedback('せいかい！💮');
             setScore(prev => prev + 1);
         } else {
-            setFeedback(`ざんねん... こたえは ${correctAnswer} `);
+            setFeedback(`ざんねん！こたえは ${correctAnswer} でした`);
         }
-    };
-
-    const handleNext = useCallback(() => {
-        if (index < problems.length - 1) {
-            setIndex(index + 1);
-            setInputValue('');
-            setFeedback('');
-        } else {
-            if (score === problems.length && problems.length > 0) {
-                onPerfectScore();
-            } else {
-                setDan(null);
-                setIndex(0);
+        setTimeout(() => {
+            if (index < problems.length - 1) {
+                setIndex(prev => prev + 1);
                 setInputValue('');
                 setFeedback('');
+            } else {
+                if (score + (parseInt(inputValue, 10) === correctAnswer ? 1 : 0) === 9) {
+                    onPerfectScore();
+                } else {
+                    setMode('home');
+                }
             }
-        }
-    }, [index, problems.length, score, onPerfectScore, setDan]);
-    
-    useEffect(() => {
-        if (feedback) {
-            const isCorrect = feedback.includes('せいかい');
-            const timer = setTimeout(() => {
-                handleNext();
-            }, isCorrect ? 800 : 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [feedback, handleNext]);
-
-    const selectDan = (selectedDan: number) => {
-        setDan(selectedDan);
-        setIndex(0);
-        setFeedback('');
-        setInputValue('');
-        setScore(0);
+        }, 1500);
     };
 
     if (!dan) {
         return (
             <div style={styles.screenWrapper}>
-                <h2 style={styles.subHeader}>れんしゅうする だん をえらんでね</h2>
+                <h2 style={styles.subHeader}>どの段をれんしゅうする？</h2>
                 <div style={styles.grid}>
-                    {Array.from({ length: 9 }, (_, i) => i + 1).map(num => (
-                        <button key={num} style={{...styles.button, ...styles.danButton}} onClick={() => selectDan(num)}>
-                            {num}
-                        </button>
+                    {Array.from({ length: 9 }, (_, i) => i + 1).map(d => (
+                        <button key={d} style={{...styles.button, ...styles.danButton}} onClick={() => setDan(d)}>{d}</button>
                     ))}
                 </div>
-                 <button style={{...styles.button, backgroundColor: '#795548'}} onClick={() => setMode('home')}>ホームにもどる</button>
+                <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
             </div>
         );
     }
 
     return (
         <div style={styles.screenWrapper}>
-            <h2 style={styles.subHeader}>{dan}のだん</h2>
+             <h2 style={styles.subHeader}>{dan}のだん</h2>
             <div style={styles.quizContainer}>
-                <div style={styles.problemText}>{currentProblem.a} × {currentProblem.b} = ?</div>
-                <InputControls
+                <div style={styles.problemText}>{currentProblem.a} × {currentProblem.b}</div>
+                <InputControls 
                     value={inputValue}
-                    onNumberClick={(num) => setInputValue(prev => prev.length < 3 ? prev + num : prev)}
+                    onNumberClick={(num) => !feedback && setInputValue(prev => (prev + num).slice(0, 3))}
                     onClear={() => setInputValue('')}
                     onCheck={handleCheck}
-                    checkDisabled={!inputValue}
+                    checkDisabled={!inputValue || !!feedback}
                     showNext={!!feedback}
                 />
-                <div style={{...styles.feedbackText, ...(feedback.includes('せいかい') ? styles.correct : styles.incorrect)}}>
-                    {feedback}
-                </div>
             </div>
-            <div>
-                 <button style={{...styles.button, backgroundColor: '#795548'}} onClick={() => setDan(null)}>だんをえらびなおす</button>
+            <div style={{...styles.feedbackText, ...((feedback === 'せいかい！💮') ? styles.correct : styles.incorrect)}}>
+                {feedback}
             </div>
         </div>
     );
 }
 
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
-function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactElement {
-    const [problems, setProblems] = useState<{ a: number; b: number }[]>([]);
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [score, setScore] = useState(0);
-    const [inputValue, setInputValue] = useState('');
-    const [feedback, setFeedback] = useState('');
-    const [isTestOver, setIsTestOver] = useState(false);
 
-    const startTest = useCallback(() => {
-        const newProblems = [];
-        for (let i = 0; i < 10; i++) {
-            newProblems.push({
-                a: Math.floor(Math.random() * 9) + 1,
-                b: Math.floor(Math.random() * 9) + 1,
-            });
-        }
-        setProblems(newProblems);
-        setCurrentIndex(0);
-        setScore(0);
-        setInputValue('');
-        setFeedback('');
-        setIsTestOver(false);
-    }, []);
+function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactElement {
+    const problemsRef = useRef<Array<{ a: number, b: number }>>([]);
+    const [index, setIndex] = useState(0);
+    const [inputValue, setInputValue] = useState('');
+    const [score, setScore] = useState(0);
+    const [showResults, setShowResults] = useState(false);
 
     useEffect(() => {
-        startTest();
-    }, [startTest]);
+        const allProblems: Array<{ a: number, b: number }> = [];
+        for (let i = 1; i <= 9; i++) {
+            for (let j = 1; j <= 9; j++) {
+                allProblems.push({ a: i, b: j });
+            }
+        }
+        // Shuffle problems
+        for (let i = allProblems.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allProblems[i], allProblems[j]] = [allProblems[j], allProblems[i]];
+        }
+        problemsRef.current = allProblems.slice(0, 10); // 10 questions
+    }, []);
+
+    const problems = problemsRef.current;
+    if (problems.length === 0) return <div>Loading...</div>;
+
+    const currentProblem = problems[index];
+    const correctAnswer = currentProblem.a * currentProblem.b;
 
     const handleCheck = () => {
-        const currentProblem = problems[currentIndex];
-        const correctAnswer = currentProblem.a * currentProblem.b;
-        if (parseInt(inputValue, 10) === correctAnswer) {
-            setFeedback('せいかい！💮');
+        const isCorrect = parseInt(inputValue, 10) === correctAnswer;
+        if (isCorrect) {
             setScore(prev => prev + 1);
+        }
+        
+        if (index < problems.length - 1) {
+            setIndex(prev => prev + 1);
+            setInputValue('');
         } else {
-            setFeedback(`ざんねん... こたえは ${correctAnswer} `);
+            setShowResults(true);
+            if (score + (isCorrect ? 1 : 0) === 10) {
+                 setTimeout(onPerfectScore, 2000);
+            }
         }
     };
 
-    const handleNext = useCallback(() => {
-        if (currentIndex < problems.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-            setInputValue('');
-            setFeedback('');
-        } else {
-            setIsTestOver(true);
-        }
-    }, [currentIndex, problems.length]);
-
-    useEffect(() => {
-        if (feedback) {
-            const isCorrect = feedback.includes('せいかい');
-            const timer = setTimeout(() => {
-                handleNext();
-            }, isCorrect ? 800 : 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [feedback, handleNext]);
-
-    useEffect(() => {
-        if (isTestOver && score === problems.length && problems.length > 0) {
-            onPerfectScore();
-        }
-    }, [isTestOver, score, problems.length, onPerfectScore]);
-    
-    if (isTestOver && score < problems.length) {
+    if (showResults) {
         return (
             <div style={styles.screenWrapper}>
                 <h2 style={styles.resultHeader}>テストおつかれさま！</h2>
-                <div style={styles.resultScore}>{problems.length}もんちゅう {score}もん せいかい！</div>
-                <div>
-                    <button style={{...styles.button, ...styles.primaryButton}} onClick={startTest}>もういちど</button>
-                    <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
-                </div>
+                <p style={styles.subHeader}>あなたのせいせき</p>
+                <p style={styles.resultScore}>{score} / 10</p>
+                <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
             </div>
-        )
+        );
     }
-
-    const currentProblem = problems[currentIndex];
-    if (!currentProblem) return <div style={styles.loadingText}>もんだいをつくっています...</div>;
-
+    
     return (
         <div style={styles.screenWrapper}>
-            <h2 style={styles.subHeader}>もんだい {currentIndex + 1}</h2>
-             <div style={styles.quizContainer}>
-                <div style={styles.problemText}>{currentProblem.a} × {currentProblem.b} = ?</div>
-                 <InputControls
+            <h2 style={styles.subHeader}>九九テスト ({index + 1}/10)</h2>
+            <div style={styles.quizContainer}>
+                <div style={styles.problemText}>{currentProblem.a} × {currentProblem.b}</div>
+                <InputControls 
                     value={inputValue}
-                    onNumberClick={(num) => setInputValue(prev => prev.length < 3 ? prev + num : prev)}
+                    onNumberClick={(num) => setInputValue(prev => (prev + num).slice(0, 3))}
                     onClear={() => setInputValue('')}
                     onCheck={handleCheck}
                     checkDisabled={!inputValue}
-                    showNext={!!feedback}
+                    showNext={false}
                 />
-                <div style={{...styles.feedbackText, ...(feedback.includes('せいかい') ? styles.correct : styles.incorrect)}}>
-                    {feedback}
-                </div>
-            </div>
-            <div>
-                 <button style={{...styles.button, backgroundColor: '#795548'}} onClick={() => setMode('home')}>ホームにもどる</button>
             </div>
         </div>
     );
 }
 
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function GalleryScreen({ cards, setMode }: GalleryScreenProps): React.ReactElement {
+    const sortedCards = [...cards].sort((a, b) => a.id - b.id);
+
     return (
-        <div style={styles.screenWrapper}>
-            <div style={styles.galleryContainer}>
-                <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length})</h2>
-                <div style={styles.galleryGrid}>
-                    {cards.length === 0 ? (
-                        <p>まだカードがありません。れんしゅうかテストで全問正解してチケットをゲットし、「カードをひく」ボタンでカードを手に入れよう！</p>
-                    ) : (
-                        cards.map(card => (
-                            <div key={card.id} style={styles.trainCard}>
-                                <CardImage card={card} style={styles.trainCardImage} alt={card.name} />
-                                <h3 style={styles.trainCardName}>{card.name}</h3>
-                                <p style={styles.trainCardInfo}>路線: {card.line}</p>
-                                <p style={styles.trainCardInfo}>{card.description}</p>
-                            </div>
-                        ))
-                    )}
-                </div>
+        <div style={styles.galleryContainer}>
+            <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length}/{TRAIN_DATA.length})</h2>
+            <div style={styles.galleryGrid}>
+                {sortedCards.map(card => (
+                    <div key={card.id} style={styles.trainCard}>
+                        <CardImage card={card} style={styles.trainCardImage} alt={card.name} />
+                        <h3 style={styles.trainCardName}>{card.name}</h3>
+                        <p style={styles.trainCardInfo}>{card.line}</p>
+                    </div>
+                ))}
             </div>
-            <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
+            <button style={{...styles.button, ...styles.secondaryButton, margin: '1rem auto'}} onClick={() => setMode('home')}>ホームにもどる</button>
         </div>
     );
 }
 
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
 function NewCardScreen({ newCard, setMode }: NewCardScreenProps): React.ReactElement {
-    if (!newCard) return <></>;
+    if (!newCard) {
+        return (
+            <div style={styles.screenWrapper}>
+                <p>エラー：表示するカードがありません。</p>
+                <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
+            </div>
+        );
+    }
     return (
         <div style={styles.screenWrapper}>
             <div style={styles.newCardContainer}>
-                <h2 style={styles.resultHeader}>やったね！あたらしい電車カードをゲット！</h2>
+                <h2 style={styles.resultHeader}>新しいでんしゃカードをGETしたよ！</h2>
                 <div style={{...styles.trainCard, ...styles.newCardSpotlight}}>
                     <CardImage card={newCard} style={styles.trainCardImage} alt={newCard.name} />
                     <h3 style={styles.trainCardName}>{newCard.name}</h3>
-                    <p style={styles.trainCardInfo}>路線: {newCard.line}</p>
+                    <p style={styles.trainCardInfo}>{newCard.line}</p>
                     <p style={styles.trainCardInfo}>{newCard.description}</p>
                 </div>
-                <div>
+                 <div>
                     <button style={{...styles.button, ...styles.tertiaryButton}} onClick={() => setMode('gallery')}>ギャラリーをみる</button>
-                    <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
+                    <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>つづける</button>
                 </div>
             </div>
         </div>
     );
 }
 
-function DrawingCardScreen({ cardToDraw, onSuccess, onError }: DrawingCardScreenProps): React.ReactElement {
+function DrawingCardScreen({ onSuccess, cardToDraw }: DrawingCardScreenProps): React.ReactElement {
     useEffect(() => {
-        if (!cardToDraw || !cardToDraw.imageUrl) {
-            onError(new Error("カード情報が見つかりません。"));
-            return;
-        }
+        // Simulate the drawing process for a better user experience
+        const timer = setTimeout(() => {
+            onSuccess(cardToDraw);
+        }, 2000); // 2-second delay
 
-        // This async function encapsulates the entire transaction.
-        const drawAndSaveCard = async () => {
-            try {
-                // Step 1: Fetch the image data.
-                const response = await fetch(cardToDraw.imageUrl);
-                if (!response.ok) {
-                    throw new Error(`画像のダウンロードに失敗しました (HTTP ${response.status})`);
-                }
-                const imageBlob = await response.blob();
-                if (imageBlob.size === 0) {
-                    throw new Error('ダウンロードした画像データが空です。');
-                }
-
-                // Step 2: Save the blob to IndexedDB.
-                await saveImage(cardToDraw.name, imageBlob);
-
-                // Step 3: If everything is successful, create the final card and call the success callback.
-                const finalCard = { ...cardToDraw, id: Date.now() };
-                onSuccess(finalCard);
-
-            } catch (e) {
-                // Step 4: If any step fails, call the error callback.
-                console.error("Card drawing transaction failed:", e);
-                const errorMessage = `「${cardToDraw.name}」のカード取得に失敗しました。ネットワーク接続を確認してください。チケットは消費されていません。`;
-                onError(new Error(errorMessage));
-            }
-        };
-
-        drawAndSaveCard();
-    }, [cardToDraw, onSuccess, onError]);
+        return () => clearTimeout(timer);
+    }, [onSuccess, cardToDraw]);
 
     return (
         <div style={styles.screenWrapper}>
-            <div style={styles.loadingText}>
-                あたらしいカードを準備中...
-            </div>
+            <h2 style={styles.loadingText}>でんしゃカードをひいています...</h2>
+             <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f682/512.gif" alt="Train Emoji" width="200" />
         </div>
     );
 }
 
-
-// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
-function ErrorScreen({ error, setMode, setError }: ErrorScreenProps): React.ReactElement {
-    if (!error) return <></>;
-
-    const handleGoHome = () => {
-        setError(null);
-        setMode('home');
-    };
-
-    return (
-        <div style={styles.screenWrapper}>
-            <h2 style={{...styles.resultHeader, color: '#d32f2f' }}>エラーが発生しました</h2>
-            <div style={styles.errorDetails}>
-                <strong>エラー詳細:</strong> {error.message}
-            </div>
-            <button style={{...styles.button, ...styles.secondaryButton}} onClick={handleGoHome}>ホームにもどる</button>
-        </div>
-    );
-}
-
-// FIX: Changed from const arrow function to a standard function component declaration to resolve parsing errors.
-// FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
-function App(): React.ReactElement {
+function App() {
     const [mode, setMode] = useState<Mode>('home');
-    const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(() => getCollectedCards());
-    const [cardTickets, setCardTickets] = useState<number>(() => getCardTickets());
-    const [newlyCollectedCard, setNewlyCollectedCard] = useState<TrainCardData | null>(null);
-    const [error, setError] = useState<Error | null>(null);
+    const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(getCollectedCards);
+    const [nextTrainIndex, setNextTrainIndex] = useState<number>(getNextTrainIndex);
+    const [cardTickets, setCardTickets] = useState<number>(getCardTickets);
+    const [newCard, setNewCard] = useState<TrainCardData | null>(null);
     const [cardToDraw, setCardToDraw] = useState<TrainCardData | null>(null);
 
-    useEffect(() => {
-        initDB().catch(err => {
-            console.error("Failed to initialize DB:", err);
-            setError(new Error('データベースの初期化に失敗しました。アプリが正常に動作しない可能性があります。'));
-            setMode('error');
-        });
-    }, []);
-
     const handlePerfectScore = useCallback(() => {
-        const newTicketCount = cardTickets + 1;
-        try {
-            saveCardTickets(newTicketCount);
-            setCardTickets(newTicketCount);
-            setMode('reward');
-        } catch (e) {
-            console.error("Failed to save new ticket data", e);
-            setError(new Error('チケットの保存に失敗しました。もう一度試してください。'));
-            setMode('error');
-        }
-    }, [cardTickets]);
-
-    const handleDrawError = useCallback((error: Error) => {
-        setError(error);
-        setMode('error');
+        setCardTickets(prev => {
+            const newTickets = prev + 1;
+            saveCardTickets(newTickets);
+            return newTickets;
+        });
+        setMode('reward');
     }, []);
-    
-    const handleDrawSuccess = useCallback((newCard: TrainCardData) => {
-        try {
-            // The risky operations (network, DB) are complete. Now, just update state and localStorage.
-            const drawnTrainIndex = TRAIN_DATA.findIndex(train => train.name === newCard.name);
-            
-            if (drawnTrainIndex === -1) {
-                // This should not happen if cardToDraw was valid.
-                throw new Error('内部エラー: カードデータが見つかりませんでした。');
-            }
-    
-            // Perform state and storage updates as a single logical unit.
-            const newTicketCount = cardTickets - 1;
-            const newCollectedCards = [...collectedCards, newCard];
-            const newNextTrainIndex = drawnTrainIndex + 1;
-    
-            saveCardTickets(newTicketCount);
-            saveCollectedCards(newCollectedCards);
-            saveNextTrainIndex(newNextTrainIndex);
-            
-            // Update React state
-            setCardTickets(newTicketCount);
-            setCollectedCards(newCollectedCards);
-            setNewlyCollectedCard(newCard);
-            setMode('newCard'); // Transition to show the new card
-    
-        } catch (e) {
-            // This catches errors from localStorage saving, which are rare but possible.
-            console.error("Failed to save card data after successful draw:", e);
-            const userError = new Error('カード情報の保存に失敗しました。チケットは消費されていません。');
-            handleDrawError(userError); // Show an error, state is not updated, ticket not consumed.
-        }
-    }, [cardTickets, collectedCards, handleDrawError]);
-    
+
     const handleDrawCard = useCallback(() => {
         if (cardTickets <= 0) return;
+        
+        const uncollectedTrains = TRAIN_DATA.filter(
+            train => !collectedCards.some(card => card.name === train.name)
+        );
 
-        let trainToGenerate: (typeof TRAIN_DATA)[0] | null = null;
-        let nextTrainDataIndex = getNextTrainIndex();
-
-        while (nextTrainDataIndex < TRAIN_DATA.length) {
-            const potentialTrain = TRAIN_DATA[nextTrainDataIndex];
-            const alreadyCollected = collectedCards.some(card => card.name === potentialTrain.name);
-            if (!alreadyCollected) {
-                trainToGenerate = potentialTrain;
-                break;
-            }
-            nextTrainDataIndex++;
-        }
-
-        if (!trainToGenerate) {
-            setMode('gallery');
-            setTimeout(() => alert("すべての電車カードを集めました！おめでとう！"), 100);
+        if (uncollectedTrains.length === 0) {
+            alert("コンプリート！すべてのカードを集めました！");
             return;
         }
-        
-        const potentialCard: TrainCardData = {
-            id: 0, // Temporary ID, will be replaced on success
-            name: trainToGenerate.name,
-            line: trainToGenerate.line,
-            description: trainToGenerate.description,
-            imageUrl: trainToGenerate.imageUrl,
-        };
-        
-        setCardToDraw(potentialCard);
+
+        // Use the saved index to ensure we get a new card each time until we run out
+        const trainToDraw = TRAIN_DATA[nextTrainIndex % TRAIN_DATA.length];
+
+        setCardToDraw(trainToDraw);
         setMode('drawingCard');
-    }, [cardTickets, collectedCards]);
 
+    }, [cardTickets, collectedCards, nextTrainIndex]);
+    
+    const handleDrawSuccess = useCallback((drawnCard: TrainCardData) => {
+        // Transaction-like update
+        try {
+            const currentTickets = getCardTickets();
+            if (currentTickets <= 0) {
+                // Should not happen, but as a safeguard
+                throw new Error("No tickets to draw a card.");
+            }
+            const newTickets = currentTickets - 1;
+            
+            const currentCards = getCollectedCards();
+            // Prevent duplicates
+            const newCards = currentCards.some(c => c.name === drawnCard.name)
+                ? currentCards
+                : [...currentCards, drawnCard];
 
-    const renderContent = () => {
+            const currentIndex = getNextTrainIndex();
+            const newIndex = (currentIndex + 1) % TRAIN_DATA.length;
+            
+            // Save all at once
+            saveCardTickets(newTickets);
+            saveCollectedCards(newCards);
+            saveNextTrainIndex(newIndex);
+            
+            // Update state
+            setCardTickets(newTickets);
+            setCollectedCards(newCards);
+            setNextTrainIndex(newIndex);
+            setNewCard(drawnCard);
+            setMode('newCard');
+
+        } catch (e) {
+            console.error("Card drawing transaction failed:", e);
+            // Since there's no network, errors are unlikely. If they happen,
+            // we just log it and go home without changing state.
+             setMode('home');
+        }
+    }, []);
+
+    const renderScreen = () => {
         switch (mode) {
             case 'practice':
                 return <PracticeScreen setMode={setMode} onPerfectScore={handlePerfectScore} />;
@@ -949,12 +726,10 @@ function App(): React.ReactElement {
                 return <GalleryScreen cards={collectedCards} setMode={setMode} />;
             case 'reward':
                 return <RewardScreen setMode={setMode} />;
-            case 'newCard':
-                return <NewCardScreen newCard={newlyCollectedCard} setMode={setMode} />;
             case 'drawingCard':
-                return <DrawingCardScreen cardToDraw={cardToDraw!} onSuccess={handleDrawSuccess} onError={handleDrawError} />;
-            case 'error':
-                 return <ErrorScreen error={error} setMode={setMode} setError={setError} />;
+                return cardToDraw && <DrawingCardScreen cardToDraw={cardToDraw} onSuccess={handleDrawSuccess} />;
+            case 'newCard':
+                 return <NewCardScreen newCard={newCard} setMode={setMode} />;
             case 'home':
             default:
                 return <HomeScreen setMode={setMode} cardTickets={cardTickets} onDrawCard={handleDrawCard} />;
@@ -964,11 +739,12 @@ function App(): React.ReactElement {
     return (
         <div style={styles.rootContainer}>
             <div style={styles.appContainer}>
-                {renderContent()}
+                {renderScreen()}
             </div>
         </div>
     );
 }
+
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(<App />);
