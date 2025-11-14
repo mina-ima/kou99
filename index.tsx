@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { TRAIN_DATA } from './train-data';
+import { initDB, saveImage, getImage } from './db';
 
 // --- Styles ---
 const styles: { [key: string]: React.CSSProperties } = {
@@ -230,6 +231,13 @@ const styles: { [key: string]: React.CSSProperties } = {
         color: '#666',
         margin: '0.2rem 0',
     },
+    trainCardDescription: {
+        fontSize: '0.9rem',
+        color: '#666',
+        margin: '0.5rem 0 0 0',
+        textAlign: 'left',
+        width: '100%',
+    },
     newCardContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -351,8 +359,58 @@ const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', ticket
 
 // --- Reusable Card Image Component ---
 function CardImage({ card, style, alt }: { card: TrainCardData, style: React.CSSProperties, alt: string }) {
-    // Image data is now directly embedded in the card data, so we can use it directly.
-    return <img src={card.imageDataUrl} style={style} alt={alt} />;
+    const [imageSrc, setImageSrc] = useState<string>('');
+
+    useEffect(() => {
+        let objectUrlToRevoke: string | null = null;
+
+        const loadImage = async () => {
+            try {
+                // 1. Check IndexedDB
+                const cachedBlob = await getImage(String(card.id));
+                if (cachedBlob) {
+                    const url = URL.createObjectURL(cachedBlob);
+                    objectUrlToRevoke = url;
+                    setImageSrc(url);
+                    return;
+                }
+
+                // 2. Not in DB, fetch from network
+                const response = await fetch(card.imageDataUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch image: ${response.statusText}`);
+                }
+                const imageBlob = await response.blob();
+                
+                // 3. Save to IndexedDB
+                await saveImage(String(card.id), imageBlob);
+                
+                // 4. Display the image
+                const url = URL.createObjectURL(imageBlob);
+                objectUrlToRevoke = url;
+                setImageSrc(url);
+            } catch (error) {
+                console.error(`Error loading image for ${card.name}:`, error);
+                // Fallback to the original URL if anything fails
+                setImageSrc(card.imageDataUrl);
+            }
+        };
+
+        loadImage();
+
+        return () => {
+            if (objectUrlToRevoke) {
+                URL.revokeObjectURL(objectUrlToRevoke);
+            }
+        };
+    }, [card.id, card.imageDataUrl, card.name]);
+    
+    // Add a placeholder while loading
+    if (!imageSrc) {
+        return <div style={{...style, backgroundColor: '#eee' }} aria-label={alt}></div>;
+    }
+
+    return <img src={imageSrc} style={style} alt={alt} />;
 }
 
 
@@ -506,7 +564,7 @@ function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): React
 
 
 function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactElement {
-    const problemsRef = useRef<Array<{ a: number, b: number }>>([]);
+    const [problems, setProblems] = useState<Array<{ a: number, b: number }>>([]);
     const [index, setIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
     const [score, setScore] = useState(0);
@@ -524,11 +582,17 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
             const j = Math.floor(Math.random() * (i + 1));
             [allProblems[i], allProblems[j]] = [allProblems[j], allProblems[i]];
         }
-        problemsRef.current = allProblems.slice(0, 10); // 10 questions
+        setProblems(allProblems.slice(0, 10)); // 10 questions
     }, []);
 
-    const problems = problemsRef.current;
-    if (problems.length === 0) return <div>Loading...</div>;
+    if (problems.length === 0) {
+        return (
+            <div style={styles.screenWrapper}>
+                <h2 style={styles.loadingText}>テスト問題を作成中...</h2>
+                <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4dd/512.gif" alt="Memo Emoji" width="150" />
+            </div>
+        );
+    }
 
     const currentProblem = problems[index];
     const correctAnswer = currentProblem.a * currentProblem.b;
@@ -591,6 +655,7 @@ function GalleryScreen({ cards, totalCount, setMode }: GalleryScreenProps): Reac
                         <CardImage card={card} style={styles.trainCardImage} alt={card.name} />
                         <h3 style={styles.trainCardName}>{card.name}</h3>
                         <p style={styles.trainCardInfo}>{card.line}</p>
+                        <p style={styles.trainCardDescription}>{card.description}</p>
                     </div>
                 ))}
             </div>
@@ -648,11 +713,33 @@ function DrawingCardScreen({ onSuccess, cardToDraw }: DrawingCardScreenProps): R
 function App() {
     const [mode, setMode] = useState<Mode>('home');
     const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(getCollectedCards);
-    const [masterTrainList] = useState<TrainCardData[]>(TRAIN_DATA);
+    const [masterTrainList, setMasterTrainList] = useState<TrainCardData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [nextTrainIndex, setNextTrainIndex] = useState<number>(getNextTrainIndex);
     const [cardTickets, setCardTickets] = useState<number>(getCardTickets);
     const [newCard, setNewCard] = useState<TrainCardData | null>(null);
     const [cardToDraw, setCardToDraw] = useState<TrainCardData | null>(null);
+
+    useEffect(() => {
+        async function initializeApp() {
+            try {
+                await initDB();
+                const response = await fetch('/api/get-train-list');
+                if (!response.ok) {
+                    throw new Error('電車のリストを取得できませんでした。');
+                }
+                const data = await response.json();
+                setMasterTrainList(data);
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        initializeApp();
+    }, []);
     
     const handlePerfectScore = useCallback(() => {
         setCardTickets(prev => {
@@ -664,7 +751,7 @@ function App() {
     }, []);
     
     const handleDrawCard = useCallback(() => {
-        if (cardTickets <= 0) return;
+        if (cardTickets <= 0 || masterTrainList.length === 0) return;
         
         const uncollectedTrains = masterTrainList.filter(
             train => !collectedCards.some(card => card.name === train.name)
@@ -715,6 +802,24 @@ function App() {
     }, [masterTrainList.length]);
 
     const renderScreen = () => {
+        if (isLoading) {
+             return (
+                <div style={styles.screenWrapper}>
+                    <h2 style={styles.loadingText}>データを読み込んでいます...</h2>
+                    <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f683/512.gif" alt="Train Emoji" width="150" />
+                </div>
+            );
+        }
+
+        if (error) {
+            return (
+                <div style={styles.screenWrapper}>
+                    <h2 style={{...styles.loadingText, color: '#f44336'}}>エラーが発生しました</h2>
+                    <p style={styles.subHeader}>{error}</p>
+                </div>
+            );
+        }
+
         switch (mode) {
             case 'practice':
                 return <PracticeScreen setMode={setMode} onPerfectScore={handlePerfectScore} />;
