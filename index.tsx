@@ -178,7 +178,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     clearButton: {
         backgroundColor: '#ef5350',
     },
-    // New styles for Gallery and Cards
+    // Styles for Gallery and Cards
     galleryContainer: {
         width: '100%',
         height: '100%',
@@ -240,6 +240,25 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontSize: 'clamp(1.5rem, 5vmin, 2.5rem)',
         color: '#3f51b5',
         fontWeight: 'bold',
+    },
+    // Styles for Error Screen
+    errorDeveloperInfo: {
+        backgroundColor: '#fff3e0',
+        border: '2px solid #ff9800',
+        borderRadius: '10px',
+        padding: '1rem',
+        margin: '1rem 0',
+        textAlign: 'left',
+        maxWidth: '600px'
+    },
+    errorDetails: {
+        backgroundColor: '#ffebee',
+        padding: '1rem',
+        borderRadius: '8px',
+        border: '1px solid #e57373',
+        maxWidth: '600px',
+        wordBreak: 'break-word',
+        margin: '1rem 0',
     },
 };
 
@@ -315,7 +334,7 @@ const generateTrainCard = async (trainName: string): Promise<Omit<TrainCardData,
 };
 
 // --- Input Controls Component ---
-const InputControls = ({ value, onNumberClick, onClear, onCheck, onNext, checkDisabled, showNext }) => {
+const InputControls = ({ value, onNumberClick, onClear, onCheck, checkDisabled, showNext }) => {
     const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
     return (
@@ -334,14 +353,7 @@ const InputControls = ({ value, onNumberClick, onClear, onCheck, onNext, checkDi
                 ))}
             </div>
             {showNext ? (
-                <div style={styles.actionButtonsContainerSingle}>
-                    <button
-                        style={{ ...styles.button, ...styles.primaryButton, width: '100%', maxWidth: '400px' }}
-                        onClick={onNext}
-                    >
-                        つぎへ
-                    </button>
-                </div>
+                null
             ) : (
                 <div style={styles.actionButtonsContainer}>
                     <button
@@ -396,7 +408,7 @@ const PracticeScreen = ({ setMode, onPerfectScore }) => {
         }
     };
 
-    const handleNext = () => {
+    const handleNext = useCallback(() => {
         if (index < problems.length - 1) {
             setIndex(index + 1);
             setInputValue('');
@@ -411,8 +423,18 @@ const PracticeScreen = ({ setMode, onPerfectScore }) => {
                 setFeedback('');
             }
         }
-    };
+    }, [index, problems.length, score, onPerfectScore]);
     
+    useEffect(() => {
+        if (feedback) {
+            const isCorrect = feedback.includes('せいかい');
+            const timer = setTimeout(() => {
+                handleNext();
+            }, isCorrect ? 800 : 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [feedback, handleNext]);
+
     const selectDan = (selectedDan) => {
         setDan(selectedDan);
         setIndex(0);
@@ -447,7 +469,6 @@ const PracticeScreen = ({ setMode, onPerfectScore }) => {
                     onNumberClick={(num) => setInputValue(prev => prev.length < 3 ? prev + num : prev)}
                     onClear={() => setInputValue('')}
                     onCheck={handleCheck}
-                    onNext={handleNext}
                     checkDisabled={!inputValue}
                     showNext={!!feedback}
                 />
@@ -501,7 +522,7 @@ const TestScreen = ({ setMode, onPerfectScore }) => {
         }
     };
 
-    const handleNext = () => {
+    const handleNext = useCallback(() => {
         if (currentIndex < problems.length - 1) {
             setCurrentIndex(currentIndex + 1);
             setInputValue('');
@@ -509,7 +530,17 @@ const TestScreen = ({ setMode, onPerfectScore }) => {
         } else {
             setIsTestOver(true);
         }
-    };
+    }, [currentIndex, problems.length]);
+
+    useEffect(() => {
+        if (feedback) {
+            const isCorrect = feedback.includes('せいかい');
+            const timer = setTimeout(() => {
+                handleNext();
+            }, isCorrect ? 800 : 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [feedback, handleNext]);
 
     useEffect(() => {
         if (isTestOver && score === problems.length && problems.length > 0) {
@@ -543,7 +574,6 @@ const TestScreen = ({ setMode, onPerfectScore }) => {
                     onNumberClick={(num) => setInputValue(prev => prev.length < 3 ? prev + num : prev)}
                     onClear={() => setInputValue('')}
                     onCheck={handleCheck}
-                    onNext={handleNext}
                     checkDisabled={!inputValue}
                     showNext={!!feedback}
                 />
@@ -603,11 +633,51 @@ const NewCardScreen = ({ newCard, setMode }) => {
     );
 };
 
+const ErrorScreen = ({ error, setMode, setError }) => {
+    if (!error) return null;
+
+    const isApiKeyError = error.message.includes('APIキーがサーバーに設定されていません');
+
+    const handleGoHome = () => {
+        setError(null);
+        setMode('home');
+    };
+
+    return (
+        <div style={styles.screenWrapper}>
+            <h2 style={{...styles.resultHeader, color: '#d32f2f' }}>エラーが発生しました</h2>
+            
+            {isApiKeyError && (
+                <div style={styles.errorDeveloperInfo}>
+                    <h3 style={{ color: '#e65100', marginTop: 0 }}>開発者の方へ</h3>
+                    <p>エラーメッセージに「APIキーが設定されていません」と表示されています。</p>
+                    <p>これは、アプリがデプロイされているサーバー（Vercelなど）にAPIキーが設定されていないことが原因です。</p>
+                    <p><strong>解決方法:</strong></p>
+                    <ol style={{paddingLeft: '20px', lineHeight: 1.6}}>
+                        <li>Vercelのプロジェクトダッシュボードを開きます。</li>
+                        <li><strong>Settings</strong> タブ → <strong>Environment Variables</strong> に移動します。</li>
+                        <li><code>API_KEY</code> という名前で、あなたのGoogle AI StudioのAPIキーを値として追加します。</li>
+                        <li>設定を保存した後、プロジェクトを<strong>再デプロイ</strong>してください。</li>
+                    </ol>
+                </div>
+            )}
+
+            <div style={styles.errorDetails}>
+                <strong>エラー詳細:</strong> {error.message}
+            </div>
+            
+            <button style={{...styles.button, ...styles.secondaryButton}} onClick={handleGoHome}>ホームにもどる</button>
+        </div>
+    );
+};
+
+
 const App = () => {
-    const [mode, setMode] = useState('home'); // home, practice, test, gallery, newCard
+    const [mode, setMode] = useState('home'); // home, practice, test, gallery, newCard, loading, error
     const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(() => getCollectedCards());
     const [newlyCollectedCard, setNewlyCollectedCard] = useState<TrainCardData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<Error | null>(null);
     const isInitialMount = useRef(true);
 
     useEffect(() => {
@@ -625,8 +695,9 @@ const App = () => {
         try {
             const nextIndex = getNextTrainIndex();
             if (nextIndex >= TRAIN_LIST.length) {
-                alert("すべての電車カードを集めました！おめでとう！");
+                // You can replace alert with a proper UI element if you prefer
                 setMode('gallery');
+                setTimeout(() => alert("すべての電車カードを集めました！おめでとう！"), 100);
                 return;
             }
 
@@ -634,7 +705,7 @@ const App = () => {
             const existingCard = collectedCards.find(c => c.name === trainName);
             if (existingCard) { 
                  saveNextTrainIndex(nextIndex + 1);
-                 handlePerfectScore(); // すでに持っているカードなら次のカードを取得しにいく
+                 handlePerfectScore(); // If card already owned, try to get the next one.
                  return;
             }
 
@@ -652,8 +723,8 @@ const App = () => {
 
         } catch (error) {
             console.error("カードの生成に失敗しました:", error);
-            alert(`カードの取得中にエラーが発生しました。\n詳細: ${error.message}\n時間をおいてもう一度試してください。`);
-            setMode('home');
+            setError(error as Error);
+            setMode('error');
         } finally {
             setIsLoading(false);
         }
@@ -672,6 +743,8 @@ const App = () => {
                 return <NewCardScreen newCard={newlyCollectedCard} setMode={setMode} />;
             case 'loading':
                  return <div style={styles.loadingText}>あたらしいカードをゲット中...</div>;
+            case 'error':
+                 return <ErrorScreen error={error} setMode={setMode} setError={setError} />;
             case 'home':
             default:
                 return <HomeScreen setMode={setMode} />;

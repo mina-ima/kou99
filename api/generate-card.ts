@@ -87,8 +87,18 @@ export default async function handler(req: Request) {
 
   } catch (error) {
     console.error('Error generating train card:', error);
+    
+    let errorMessage = 'カードの生成に失敗しました。';
+    let errorDetails = error.message;
+
+    // Check for quota-related errors in the error message
+    if (error.message && (error.message.includes('Quota exceeded') || error.message.includes('RESOURCE_EXHAUSTED'))) {
+        errorMessage = 'APIの無料利用枠の上限に達しました。';
+        errorDetails = 'しばらくしてからもう一度お試しいただくか、Google AI Studioで請求設定が有効になっているかご確認ください。';
+    }
+    
     // エラーレスポンスを返す
-    return new Response(JSON.stringify({ error: 'カードの生成に失敗しました。', details: error.message }), {
+    return new Response(JSON.stringify({ error: errorMessage, details: errorDetails }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
