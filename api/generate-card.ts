@@ -68,15 +68,23 @@ export default async function handler(req: Request) {
     const { line, description } = JSON.parse(textResponse.text);
 
     let imageUrl = '';
-    for (const part of imageResponse.candidates[0].content.parts) {
-      if (part.inlineData) {
-        const base64ImageBytes: string = part.inlineData.data;
-        imageUrl = `data:image/png;base64,${base64ImageBytes}`;
-      }
+    // Safely access image data to prevent crashes if the API response is empty
+    if (imageResponse.candidates && imageResponse.candidates.length > 0) {
+        const firstCandidate = imageResponse.candidates[0];
+        if (firstCandidate.content && firstCandidate.content.parts) {
+            for (const part of firstCandidate.content.parts) {
+                if (part.inlineData) {
+                    const base64ImageBytes: string = part.inlineData.data;
+                    imageUrl = `data:image/png;base64,${base64ImageBytes}`;
+                    break; // Image found, exit loop
+                }
+            }
+        }
     }
     
     if (!imageUrl) {
-        throw new Error('Image generation failed.');
+        // If image generation fails, throw an error so the frontend can handle it
+        throw new Error('画像の生成に失敗しました。AIが安全でないと判断したか、一時的な問題が発生した可能性があります。');
     }
 
     // 成功レスポンスを返す

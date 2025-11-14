@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -72,6 +74,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
     tertiaryButton: {
         backgroundColor: '#9c27b0', // Purple for Gallery
+    },
+    drawCardButton: {
+        backgroundColor: '#f44336',
     },
     danButton: {
         width: 'clamp(60px, 16vmin, 80px)',
@@ -260,6 +265,18 @@ const styles: { [key: string]: React.CSSProperties } = {
         wordBreak: 'break-word',
         margin: '1rem 0',
     },
+    ticketInfo: {
+        position: 'absolute',
+        top: 'clamp(1rem, 3vmin, 2rem)',
+        right: 'clamp(1rem, 3vmin, 2rem)',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        padding: '0.5rem 1rem',
+        borderRadius: '20px',
+        fontSize: 'clamp(1rem, 3vmin, 1.5rem)',
+        fontWeight: 'bold',
+        color: '#3f51b5',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    }
 };
 
 const TRAIN_LIST = [
@@ -274,39 +291,92 @@ type TrainCardData = {
     imageUrl: string;
 };
 
+// Fix: Create a strict type for application mode state
+type Mode = 'home' | 'practice' | 'test' | 'gallery' | 'newCard' | 'loading' | 'error' | 'reward';
+
+// --- Component Prop Types ---
+interface InputControlsProps {
+    value: string;
+    onNumberClick: (num: string) => void;
+    onClear: () => void;
+    onCheck: () => void;
+    checkDisabled: boolean;
+    showNext: boolean;
+}
+
+interface HomeScreenProps {
+    setMode: (mode: Mode) => void;
+    cardTickets: number;
+    onDrawCard: () => void;
+}
+
+interface RewardScreenProps {
+    setMode: (mode: Mode) => void;
+}
+
+interface PracticeScreenProps {
+    setMode: (mode: Mode) => void;
+    onPerfectScore: () => void;
+}
+
+interface TestScreenProps {
+    setMode: (mode: Mode) => void;
+    onPerfectScore: () => void;
+}
+
+interface GalleryScreenProps {
+    cards: TrainCardData[];
+    setMode: (mode: Mode) => void;
+}
+
+interface NewCardScreenProps {
+    newCard: TrainCardData | null;
+    setMode: (mode: Mode) => void;
+}
+
+interface ErrorScreenProps {
+    error: Error | null;
+    setMode: (mode: Mode) => void;
+    setError: (error: Error | null) => void;
+}
+
+
 // --- LocalStorage Helpers ---
 const STORAGE_PREFIX = 'kou99app_';
 
-const getCollectedCards = (): TrainCardData[] => {
+// FIX: Changed from const arrow function to a standard function declaration to resolve parsing errors.
+function getFromStorage<T>(key: string, defaultValue: T): T {
     try {
-        const cards = localStorage.getItem(`${STORAGE_PREFIX}collectedTrainCards`);
-        return cards ? JSON.parse(cards) : [];
+        const item = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
+        return item ? JSON.parse(item) : defaultValue;
     } catch (e) {
-        console.error("Failed to parse collected cards from localStorage", e);
-        return [];
+        console.error(`Failed to parse ${key} from localStorage`, e);
+        return defaultValue;
     }
-};
+}
 
-const saveCollectedCards = (cards: TrainCardData[]) => {
+// FIX: Changed from const arrow function to a standard function declaration to resolve parsing errors.
+function saveToStorage<T>(key: string, value: T) {
     try {
-        localStorage.setItem(`${STORAGE_PREFIX}collectedTrainCards`, JSON.stringify(cards));
+        localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
     } catch (e) {
-        console.error("Failed to save collected cards to localStorage", e);
+        console.error(`Failed to save ${key} to localStorage`, e);
     }
-};
+}
 
-const getNextTrainIndex = (): number => {
-    const index = localStorage.getItem(`${STORAGE_PREFIX}nextTrainIndex`);
-    return index ? parseInt(index, 10) : 0;
-};
+const getCollectedCards = (): TrainCardData[] => getFromStorage('collectedTrainCards', []);
+const saveCollectedCards = (cards: TrainCardData[]) => saveToStorage('collectedTrainCards', cards);
 
-const saveNextTrainIndex = (index: number) => {
-    localStorage.setItem(`${STORAGE_PREFIX}nextTrainIndex`, index.toString());
-};
+const getNextTrainIndex = (): number => getFromStorage('nextTrainIndex', 0);
+const saveNextTrainIndex = (index: number) => saveToStorage('nextTrainIndex', index);
+
+const getCardTickets = (): number => getFromStorage('cardTickets', 0);
+const saveCardTickets = (tickets: number) => saveToStorage('cardTickets', tickets);
 
 
 // --- API Helper ---
-const generateTrainCard = async (trainName: string): Promise<Omit<TrainCardData, 'id' | 'name'>> => {
+// FIX: Changed from const arrow function to a standard async function declaration to resolve parsing errors.
+async function generateTrainCard(trainName: string): Promise<Omit<TrainCardData, 'id' | 'name'>> {
     const response = await fetch('/api/generate-card', {
         method: 'POST',
         headers: {
@@ -331,10 +401,11 @@ const generateTrainCard = async (trainName: string): Promise<Omit<TrainCardData,
         description: data.description,
         imageUrl: data.imageUrl,
     };
-};
+}
 
 // --- Input Controls Component ---
-const InputControls = ({ value, onNumberClick, onClear, onCheck, checkDisabled, showNext }) => {
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function InputControls({ value, onNumberClick, onClear, onCheck, checkDisabled, showNext }: InputControlsProps): JSX.Element {
     const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
     return (
@@ -373,23 +444,51 @@ const InputControls = ({ value, onNumberClick, onClear, onCheck, checkDisabled, 
             )}
         </div>
     );
-};
+}
 
 // --- App Components ---
-
-const HomeScreen = ({ setMode }) => (
-    <div style={styles.screenWrapper}>
-        <h1 style={styles.header}>こうたの九九アプリ</h1>
-        <div>
-            <button style={{...styles.button, ...styles.primaryButton}} onClick={() => setMode('practice')}>れんしゅう</button>
-            <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('test')}>テスト</button>
-            <button style={{...styles.button, ...styles.tertiaryButton}} onClick={() => setMode('gallery')}>ギャラリー</button>
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function HomeScreen({ setMode, cardTickets, onDrawCard }: HomeScreenProps): JSX.Element {
+    return (
+        <div style={styles.screenWrapper}>
+            <div style={styles.ticketInfo}>GETチケット: {cardTickets}枚</div>
+            <h1 style={styles.header}>こうたの九九アプリ</h1>
+            <div>
+                <button style={{...styles.button, ...styles.primaryButton}} onClick={() => setMode('practice')}>れんしゅう</button>
+                <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('test')}>テスト</button>
+                <button style={{...styles.button, ...styles.tertiaryButton}} onClick={() => setMode('gallery')}>ギャラリー</button>
+                 <button 
+                    style={{...styles.button, ...styles.drawCardButton}} 
+                    onClick={onDrawCard}
+                    disabled={cardTickets <= 0}
+                >
+                    カードをひく
+                </button>
+            </div>
         </div>
-    </div>
-);
+    );
+}
 
-const PracticeScreen = ({ setMode, onPerfectScore }) => {
-    const [dan, setDan] = useState(null);
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function RewardScreen({ setMode }: RewardScreenProps): JSX.Element {
+    return (
+         <div style={styles.screenWrapper}>
+            <div style={styles.newCardContainer}>
+                <h2 style={styles.resultHeader}>全問正解おめでとう！</h2>
+                <h3 style={styles.subHeader}>でんしゃカードGETチケットを1枚手に入れたよ！</h3>
+                <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f3ab/512.gif" alt="Ticket Emoji" width="150" />
+                <div>
+                    <button style={{...styles.button, ...styles.tertiaryButton}} onClick={() => setMode('gallery')}>ギャラリーをみる</button>
+                    <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): JSX.Element {
+    const [dan, setDan] = useState<number | null>(null);
     const [index, setIndex] = useState(0);
     const [inputValue, setInputValue] = useState('');
     const [feedback, setFeedback] = useState('');
@@ -423,7 +522,7 @@ const PracticeScreen = ({ setMode, onPerfectScore }) => {
                 setFeedback('');
             }
         }
-    }, [index, problems.length, score, onPerfectScore]);
+    }, [index, problems.length, score, onPerfectScore, setDan]);
     
     useEffect(() => {
         if (feedback) {
@@ -435,7 +534,7 @@ const PracticeScreen = ({ setMode, onPerfectScore }) => {
         }
     }, [feedback, handleNext]);
 
-    const selectDan = (selectedDan) => {
+    const selectDan = (selectedDan: number) => {
         setDan(selectedDan);
         setIndex(0);
         setFeedback('');
@@ -481,10 +580,11 @@ const PracticeScreen = ({ setMode, onPerfectScore }) => {
             </div>
         </div>
     );
-};
+}
 
-const TestScreen = ({ setMode, onPerfectScore }) => {
-    const [problems, setProblems] = useState([]);
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function TestScreen({ setMode, onPerfectScore }: TestScreenProps): JSX.Element {
+    const [problems, setProblems] = useState<{ a: number; b: number }[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [inputValue, setInputValue] = useState('');
@@ -586,38 +686,41 @@ const TestScreen = ({ setMode, onPerfectScore }) => {
             </div>
         </div>
     );
-};
+}
 
-const GalleryScreen = ({ cards, setMode }) => (
-    <div style={styles.screenWrapper}>
-        <div style={styles.galleryContainer}>
-            <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length})</h2>
-            <div style={styles.galleryGrid}>
-                {cards.length === 0 ? (
-                    <p>まだカードがありません。れんしゅうかテストで全問正解してゲットしよう！</p>
-                ) : (
-                    cards.map(card => (
-                        <div key={card.id} style={styles.trainCard}>
-                            <img src={card.imageUrl} alt={card.name} style={styles.trainCardImage} />
-                            <h3 style={styles.trainCardName}>{card.name}</h3>
-                            <p style={styles.trainCardInfo}>路線: {card.line}</p>
-                            <p style={styles.trainCardInfo}>{card.description}</p>
-                        </div>
-                    ))
-                )}
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function GalleryScreen({ cards, setMode }: GalleryScreenProps): JSX.Element {
+    return (
+        <div style={styles.screenWrapper}>
+            <div style={styles.galleryContainer}>
+                <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length})</h2>
+                <div style={styles.galleryGrid}>
+                    {cards.length === 0 ? (
+                        <p>まだカードがありません。れんしゅうかテストで全問正解してチケットをゲットし、「カードをひく」ボタンでカードを手に入れよう！</p>
+                    ) : (
+                        cards.map(card => (
+                            <div key={card.id} style={styles.trainCard}>
+                                <img src={card.imageUrl} alt={card.name} style={styles.trainCardImage} />
+                                <h3 style={styles.trainCardName}>{card.name}</h3>
+                                <p style={styles.trainCardInfo}>路線: {card.line}</p>
+                                <p style={styles.trainCardInfo}>{card.description}</p>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
+            <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
         </div>
-        <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
-    </div>
-);
+    );
+}
 
-const NewCardScreen = ({ newCard, setMode }) => {
-    if (!newCard) return null;
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function NewCardScreen({ newCard, setMode }: NewCardScreenProps): JSX.Element {
+    if (!newCard) return <></>;
     return (
         <div style={styles.screenWrapper}>
             <div style={styles.newCardContainer}>
-                <h2 style={styles.resultHeader}>やったね！全問せいかい！</h2>
-                <h3 style={styles.subHeader}>あたらしい電車カードをゲットしたよ！</h3>
+                <h2 style={styles.resultHeader}>やったね！あたらしい電車カードをゲット！</h2>
                 <div style={{...styles.trainCard, ...styles.newCardSpotlight}}>
                     <img src={newCard.imageUrl} alt={newCard.name} style={styles.trainCardImage} />
                     <h3 style={styles.trainCardName}>{newCard.name}</h3>
@@ -631,10 +734,11 @@ const NewCardScreen = ({ newCard, setMode }) => {
             </div>
         </div>
     );
-};
+}
 
-const ErrorScreen = ({ error, setMode, setError }) => {
-    if (!error) return null;
+// FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
+function ErrorScreen({ error, setMode, setError }: ErrorScreenProps): JSX.Element {
+    if (!error) return <></>;
 
     const isApiKeyError = error.message.includes('APIキーがサーバーに設定されていません');
 
@@ -669,12 +773,13 @@ const ErrorScreen = ({ error, setMode, setError }) => {
             <button style={{...styles.button, ...styles.secondaryButton}} onClick={handleGoHome}>ホームにもどる</button>
         </div>
     );
-};
+}
 
-
-const App = () => {
-    const [mode, setMode] = useState('home'); // home, practice, test, gallery, newCard, loading, error
+// FIX: Changed from const arrow function to a standard function component declaration to resolve parsing errors.
+function App(): JSX.Element {
+    const [mode, setMode] = useState<Mode>('home');
     const [collectedCards, setCollectedCards] = useState<TrainCardData[]>(() => getCollectedCards());
+    const [cardTickets, setCardTickets] = useState<number>(() => getCardTickets());
     const [newlyCollectedCard, setNewlyCollectedCard] = useState<TrainCardData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -688,47 +793,70 @@ const App = () => {
         saveCollectedCards(collectedCards);
     }, [collectedCards]);
 
-    const handlePerfectScore = useCallback(async () => {
+     useEffect(() => {
+        saveCardTickets(cardTickets);
+    }, [cardTickets]);
+
+
+    const handlePerfectScore = useCallback(() => {
+        setCardTickets(prev => prev + 1);
+        setMode('reward');
+    }, []);
+    
+    const handleDrawCard = useCallback(async () => {
+        if (cardTickets <= 0) return;
+
         setIsLoading(true);
         setMode('loading');
 
+        let trainNameToGenerate: string | null = null;
+        let nextTrainDataIndex = getNextTrainIndex();
+
+        // Loop to find the next train that the user hasn't collected yet.
+        while (nextTrainDataIndex < TRAIN_LIST.length) {
+            const potentialTrainName = TRAIN_LIST[nextTrainDataIndex];
+            const alreadyCollected = collectedCards.some(card => card.name === potentialTrainName);
+            if (!alreadyCollected) {
+                trainNameToGenerate = potentialTrainName;
+                break; // Found a new train to generate.
+            }
+            nextTrainDataIndex++; // This one is already collected, check the next.
+        }
+
+        // If no new train was found, it means all cards have been collected.
+        if (!trainNameToGenerate) {
+            setIsLoading(false);
+            setMode('gallery');
+            setTimeout(() => alert("すべての電車カードを集めました！おめでとう！"), 100);
+            return;
+        }
+        
+        // Decrement the ticket just before the API call.
+        setCardTickets(prev => prev - 1);
+
         try {
-            const nextIndex = getNextTrainIndex();
-            if (nextIndex >= TRAIN_LIST.length) {
-                // You can replace alert with a proper UI element if you prefer
-                setMode('gallery');
-                setTimeout(() => alert("すべての電車カードを集めました！おめでとう！"), 100);
-                return;
-            }
-
-            const trainName = TRAIN_LIST[nextIndex];
-            const existingCard = collectedCards.find(c => c.name === trainName);
-            if (existingCard) { 
-                 saveNextTrainIndex(nextIndex + 1);
-                 handlePerfectScore(); // If card already owned, try to get the next one.
-                 return;
-            }
-
-            const cardData = await generateTrainCard(trainName);
+            const cardData = await generateTrainCard(trainNameToGenerate);
             const newCard: TrainCardData = {
                 id: Date.now(),
-                name: trainName,
+                name: trainNameToGenerate,
                 ...cardData,
             };
 
             setNewlyCollectedCard(newCard);
             setCollectedCards(prevCards => [...prevCards, newCard]);
-            saveNextTrainIndex(nextIndex + 1);
+            saveNextTrainIndex(nextTrainDataIndex + 1);
             setMode('newCard');
 
-        } catch (error) {
-            console.error("カードの生成に失敗しました:", error);
-            setError(error as Error);
+        } catch (err) {
+            console.error("カードの生成に失敗しました:", err);
+            setError(err as Error);
             setMode('error');
+            // IMPORTANT: Give the ticket back to the user on failure.
+            setCardTickets(prev => prev + 1);
         } finally {
             setIsLoading(false);
         }
-    }, [collectedCards]);
+    }, [cardTickets, collectedCards]);
 
 
     const renderContent = () => {
@@ -739,6 +867,8 @@ const App = () => {
                 return <TestScreen setMode={setMode} onPerfectScore={handlePerfectScore} />;
             case 'gallery':
                 return <GalleryScreen cards={collectedCards} setMode={setMode} />;
+            case 'reward':
+                return <RewardScreen setMode={setMode} />;
             case 'newCard':
                 return <NewCardScreen newCard={newlyCollectedCard} setMode={setMode} />;
             case 'loading':
@@ -747,7 +877,7 @@ const App = () => {
                  return <ErrorScreen error={error} setMode={setMode} setError={setError} />;
             case 'home':
             default:
-                return <HomeScreen setMode={setMode} />;
+                return <HomeScreen setMode={setMode} cardTickets={cardTickets} onDrawCard={handleDrawCard} />;
         }
     };
 
@@ -758,7 +888,7 @@ const App = () => {
             </div>
         </div>
     );
-};
+}
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 root.render(<App />);
