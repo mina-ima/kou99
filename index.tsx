@@ -256,26 +256,33 @@ type TrainCardData = {
 };
 
 // --- LocalStorage Helpers ---
+const STORAGE_PREFIX = 'kou99app_';
+
 const getCollectedCards = (): TrainCardData[] => {
     try {
-        const cards = localStorage.getItem('collectedTrainCards');
+        const cards = localStorage.getItem(`${STORAGE_PREFIX}collectedTrainCards`);
         return cards ? JSON.parse(cards) : [];
     } catch (e) {
+        console.error("Failed to parse collected cards from localStorage", e);
         return [];
     }
 };
 
 const saveCollectedCards = (cards: TrainCardData[]) => {
-    localStorage.setItem('collectedTrainCards', JSON.stringify(cards));
+    try {
+        localStorage.setItem(`${STORAGE_PREFIX}collectedTrainCards`, JSON.stringify(cards));
+    } catch (e) {
+        console.error("Failed to save collected cards to localStorage", e);
+    }
 };
 
 const getNextTrainIndex = (): number => {
-    const index = localStorage.getItem('nextTrainIndex');
+    const index = localStorage.getItem(`${STORAGE_PREFIX}nextTrainIndex`);
     return index ? parseInt(index, 10) : 0;
 };
 
 const saveNextTrainIndex = (index: number) => {
-    localStorage.setItem('nextTrainIndex', index.toString());
+    localStorage.setItem(`${STORAGE_PREFIX}nextTrainIndex`, index.toString());
 };
 
 
@@ -577,7 +584,7 @@ const GalleryScreen = ({ cards, setMode }) => (
             <h2 style={styles.subHeader}>でんしゃギャラリー ({cards.length})</h2>
             <div style={styles.galleryGrid}>
                 {cards.length === 0 ? (
-                    <p>まだカードがありません。テストで10問正解してゲットしよう！</p>
+                    <p>まだカードがありません。れんしゅうかテストで全問正解してゲットしよう！</p>
                 ) : (
                     cards.map(card => (
                         <div key={card.id} style={styles.trainCard}>
@@ -634,19 +641,27 @@ const App = () => {
     const handlePerfectScore = useCallback(async () => {
         setIsLoading(true);
         setMode('loading');
+
+        if (!process.env.API_KEY) {
+            alert("APIキーが設定されていません。アプリの管理者に連絡してください。");
+            setMode('home');
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const nextIndex = getNextTrainIndex();
             if (nextIndex >= TRAIN_LIST.length) {
-                console.log("すべてのカードを集めました！");
-                 setMode('gallery');
+                alert("すべての電車カードを集めました！おめでとう！");
+                setMode('gallery');
                 return;
             }
 
             const trainName = TRAIN_LIST[nextIndex];
             const existingCard = collectedCards.find(c => c.name === trainName);
-            if (existingCard) { // Already have this card, maybe from a previous session before reset
+            if (existingCard) { 
                  saveNextTrainIndex(nextIndex + 1);
-                 handlePerfectScore(); // Try next one
+                 handlePerfectScore(); // すでに持っているカードなら次のカードを取得しにいく
                  return;
             }
 
@@ -664,7 +679,7 @@ const App = () => {
 
         } catch (error) {
             console.error("カードの生成に失敗しました:", error);
-            // On failure, go back home so user is not stuck
+            alert(`カードの取得中にエラーが発生しました。\n時間をおいてもう一度試してください。`);
             setMode('home');
         } finally {
             setIsLoading(false);
