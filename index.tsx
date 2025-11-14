@@ -322,8 +322,8 @@ interface NewCardScreenProps {
 
 interface DrawingCardScreenProps {
     cardToDraw: TrainCardData;
-    onLoadSuccess: (card: TrainCardData) => void;
-    onLoadError: (error: Error) => void;
+    onSuccess: (card: TrainCardData) => void;
+    onError: (error: Error) => void;
 }
 
 interface ErrorScreenProps {
@@ -766,34 +766,43 @@ function NewCardScreen({ newCard, setMode }: NewCardScreenProps): React.ReactEle
     );
 }
 
-function DrawingCardScreen({ cardToDraw, onLoadSuccess, onLoadError }: DrawingCardScreenProps): React.ReactElement {
+function DrawingCardScreen({ cardToDraw, onSuccess, onError }: DrawingCardScreenProps): React.ReactElement {
     useEffect(() => {
         if (!cardToDraw || !cardToDraw.imageUrl) {
-            onLoadError(new Error("カード情報が見つかりません。"));
+            onError(new Error("カード情報が見つかりません。"));
             return;
         }
 
-        const img = new Image();
-        img.src = cardToDraw.imageUrl;
+        // This async function encapsulates the entire transaction.
+        const drawAndSaveCard = async () => {
+            try {
+                // Step 1: Fetch the image data.
+                const response = await fetch(cardToDraw.imageUrl);
+                if (!response.ok) {
+                    throw new Error(`画像のダウンロードに失敗しました (HTTP ${response.status})`);
+                }
+                const imageBlob = await response.blob();
+                if (imageBlob.size === 0) {
+                    throw new Error('ダウンロードした画像データが空です。');
+                }
 
-        const handleLoad = () => {
-            const finalCard = { ...cardToDraw, id: Date.now() };
-            onLoadSuccess(finalCard);
+                // Step 2: Save the blob to IndexedDB.
+                await saveImage(cardToDraw.name, imageBlob);
+
+                // Step 3: If everything is successful, create the final card and call the success callback.
+                const finalCard = { ...cardToDraw, id: Date.now() };
+                onSuccess(finalCard);
+
+            } catch (e) {
+                // Step 4: If any step fails, call the error callback.
+                console.error("Card drawing transaction failed:", e);
+                const errorMessage = `「${cardToDraw.name}」のカード取得に失敗しました。ネットワーク接続を確認してください。チケットは消費されていません。`;
+                onError(new Error(errorMessage));
+            }
         };
 
-        const handleError = () => {
-            const errorMessage = `「${cardToDraw.name}」の画像の読み込みに失敗しました。チケットは消費されていません。`;
-            onLoadError(new Error(errorMessage));
-        };
-
-        img.addEventListener('load', handleLoad);
-        img.addEventListener('error', handleError);
-
-        return () => {
-            img.removeEventListener('load', handleLoad);
-            img.removeEventListener('error', handleError);
-        };
-    }, [cardToDraw, onLoadSuccess, onLoadError]);
+        drawAndSaveCard();
+    }, [cardToDraw, onSuccess, onError]);
 
     return (
         <div style={styles.screenWrapper}>
@@ -803,6 +812,7 @@ function DrawingCardScreen({ cardToDraw, onLoadSuccess, onLoadError }: DrawingCa
         </div>
     );
 }
+
 
 // FIX: Changed from React.FC arrow function to a standard function component declaration to resolve parsing errors.
 // FIX: Replaced JSX.Element with React.ReactElement to resolve 'Cannot find namespace JSX' error.
@@ -861,24 +871,17 @@ function App(): React.ReactElement {
         setMode('error');
     }, []);
     
-    const handleDrawSuccess = useCallback(async (newCard: TrainCardData) => {
+    const handleDrawSuccess = useCallback((newCard: TrainCardData) => {
         try {
-            // Step 1: Download and save the image to IndexedDB
-            const response = await fetch(newCard.imageUrl);
-            if (!response.ok) {
-                throw new Error(`画像のダウンロードに失敗しました: ${response.statusText}`);
-            }
-            const imageBlob = await response.blob();
-            // Use card name as a unique key for the image
-            await saveImage(newCard.name, imageBlob);
-    
-            // Step 2: Update local storage and state
+            // The risky operations (network, DB) are complete. Now, just update state and localStorage.
             const drawnTrainIndex = TRAIN_DATA.findIndex(train => train.name === newCard.name);
             
             if (drawnTrainIndex === -1) {
+                // This should not happen if cardToDraw was valid.
                 throw new Error('内部エラー: カードデータが見つかりませんでした。');
             }
     
+            // Perform state and storage updates as a single logical unit.
             const newTicketCount = cardTickets - 1;
             const newCollectedCards = [...collectedCards, newCard];
             const newNextTrainIndex = drawnTrainIndex + 1;
@@ -887,15 +890,17 @@ function App(): React.ReactElement {
             saveCollectedCards(newCollectedCards);
             saveNextTrainIndex(newNextTrainIndex);
             
+            // Update React state
             setCardTickets(newTicketCount);
             setCollectedCards(newCollectedCards);
             setNewlyCollectedCard(newCard);
-            setMode('newCard');
+            setMode('newCard'); // Transition to show the new card
     
         } catch (e) {
-            console.error("Failed to draw and save new card:", e);
-            const userError = new Error('カードの保存に失敗しました。ネットワーク接続を確認してください。チケットは消費されていません。');
-            handleDrawError(userError);
+            // This catches errors from localStorage saving, which are rare but possible.
+            console.error("Failed to save card data after successful draw:", e);
+            const userError = new Error('カード情報の保存に失敗しました。チケットは消費されていません。');
+            handleDrawError(userError); // Show an error, state is not updated, ticket not consumed.
         }
     }, [cardTickets, collectedCards, handleDrawError]);
     
@@ -922,7 +927,7 @@ function App(): React.ReactElement {
         }
         
         const potentialCard: TrainCardData = {
-            id: 0, // Temporary ID
+            id: 0, // Temporary ID, will be replaced on success
             name: trainToGenerate.name,
             line: trainToGenerate.line,
             description: trainToGenerate.description,
@@ -947,7 +952,7 @@ function App(): React.ReactElement {
             case 'newCard':
                 return <NewCardScreen newCard={newlyCollectedCard} setMode={setMode} />;
             case 'drawingCard':
-                return <DrawingCardScreen cardToDraw={cardToDraw!} onLoadSuccess={handleDrawSuccess} onLoadError={handleDrawError} />;
+                return <DrawingCardScreen cardToDraw={cardToDraw!} onSuccess={handleDrawSuccess} onError={handleDrawError} />;
             case 'error':
                  return <ErrorScreen error={error} setMode={setMode} setError={setError} />;
             case 'home':
