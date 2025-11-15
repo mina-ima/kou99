@@ -212,7 +212,8 @@ const styles: { [key: string]: React.CSSProperties } = {
         textAlign: 'center',
         transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         cursor: 'pointer',
-        userSelect: 'none', // Prevent text selection on long press
+        userSelect: 'none',
+        position: 'relative',
     },
     trainCardImage: {
         width: '100%',
@@ -268,6 +269,24 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 'bold',
         color: '#3f51b5',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    },
+    deleteButton: {
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        backgroundColor: '#ff5252',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '40px',
+        height: '40px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+        fontSize: '1.2rem',
+        zIndex: 10,
     }
 };
 
@@ -316,6 +335,7 @@ interface GalleryScreenProps {
     totalCount: number;
     setMode: (mode: Mode) => void;
     onCardImageRetry: (cardId: number) => void;
+    onDeleteCard: (card: TrainCardData) => void;
     retryTimestamps: { [key: number]: number };
 }
 
@@ -663,7 +683,7 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
     );
 }
 
-function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTimestamps }: GalleryScreenProps): React.ReactElement {
+function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, onDeleteCard, retryTimestamps }: GalleryScreenProps): React.ReactElement {
     const sortedCards = [...cards].sort((a, b) => a.id - b.id);
     const longPressTimer = useRef<number | null>(null);
 
@@ -693,6 +713,11 @@ function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTime
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
     };
+
+    const handleDeleteClick = (e: React.MouseEvent, card: TrainCardData) => {
+        e.stopPropagation();
+        onDeleteCard(card);
+    };
     
     return (
         <div style={styles.galleryContainer}>
@@ -709,6 +734,13 @@ function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTime
                         onTouchStart={() => handlePressStart(card.id)}
                         onTouchEnd={handlePressEnd}
                     >
+                        <button 
+                            style={styles.deleteButton} 
+                            onClick={(e) => handleDeleteClick(e, card)}
+                            aria-label="削除"
+                        >
+                            🗑️
+                        </button>
                         <CardImage 
                             card={card} 
                             style={styles.trainCardImage} 
@@ -827,21 +859,22 @@ function App() {
     const handleDrawCard = useCallback(() => {
         if (cardTickets <= 0 || masterTrainList.length === 0) return;
         
-        const uncollectedTrains = masterTrainList.filter(
-            train => !collectedCards.some(card => card.name === train.name)
+        // Find the first uncollected train from the master list
+        // This ensures that if a user deletes a card, it will be the next one drawn
+        // It also fills in any other gaps in the collection
+        const uncollectedTrain = masterTrainList.find(
+            train => !collectedCards.some(card => card.id === train.id)
         );
 
-        if (uncollectedTrains.length === 0) {
+        if (!uncollectedTrain) {
             alert("コンプリート！すべてのカードを集めました！");
             return;
         }
 
-        const trainToDraw = masterTrainList[nextTrainIndex % masterTrainList.length];
-
-        setCardToDraw(trainToDraw);
+        setCardToDraw(uncollectedTrain);
         setMode('drawingCard');
 
-    }, [cardTickets, collectedCards, nextTrainIndex, masterTrainList]);
+    }, [cardTickets, collectedCards, masterTrainList]);
     
     const handleDrawSuccess = useCallback((drawnCard: TrainCardData) => {
         try {
@@ -852,12 +885,15 @@ function App() {
             const newTickets = currentTickets - 1;
             
             const currentCards = getCollectedCards();
-            const newCards = currentCards.some(c => c.name === drawnCard.name)
+            // Double check to prevent duplicates if something weird happened
+            const newCards = currentCards.some(c => c.id === drawnCard.id)
                 ? currentCards
                 : [...currentCards, drawnCard];
 
-            const currentIndex = getNextTrainIndex();
-            const newIndex = (currentIndex + 1) % masterTrainList.length;
+            // Calculate next index based on total collected count for general progression tracking
+            // This might not exactly match the 'first uncollected' ID if there are gaps,
+            // but it keeps the original logic roughly intact for new users.
+            const newIndex = newCards.length % masterTrainList.length;
             
             saveCardTickets(newTickets);
             saveCollectedCards(newCards);
@@ -890,6 +926,26 @@ function App() {
         }
     }, []);
 
+    const handleDeleteCard = useCallback(async (card: TrainCardData) => {
+        if (window.confirm(`「${card.name}」をすてますか？\n（チケットをつかって またひくことができます）`)) {
+            try {
+                // Remove from state and storage
+                const updatedCards = collectedCards.filter(c => c.id !== card.id);
+                setCollectedCards(updatedCards);
+                saveCollectedCards(updatedCards);
+
+                // Remove image from DB
+                await deleteImage(String(card.id));
+
+                // We don't update nextTrainIndex here because handleDrawCard dynamically finds the gap
+                
+            } catch (error) {
+                console.error('Failed to delete card:', error);
+                alert('カードの削除に失敗しました。');
+            }
+        }
+    }, [collectedCards]);
+
     const renderScreen = () => {
         if (isLoading) {
              return (
@@ -920,6 +976,7 @@ function App() {
                     totalCount={masterTrainList.length} 
                     setMode={setMode}
                     onCardImageRetry={handleCardImageRetry}
+                    onDeleteCard={handleDeleteCard}
                     retryTimestamps={retryTimestamps}
                 />;
             case 'reward':
