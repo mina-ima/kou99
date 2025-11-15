@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { initDB, saveImage, getImage, deleteImage } from './db';
@@ -546,25 +545,30 @@ function PracticeScreen({ setMode, onPerfectScore }: PracticeScreenProps): React
     const correctAnswer = currentProblem ? currentProblem.a * currentProblem.b : 0;
     
     const handleCheck = () => {
-        if (parseInt(inputValue, 10) === correctAnswer) {
+        const isCorrect = parseInt(inputValue, 10) === correctAnswer;
+        if (isCorrect) {
             setFeedback('せいかい！💮');
             setScore(prev => prev + 1);
         } else {
             setFeedback(`ざんねん！こたえは ${correctAnswer} でした`);
         }
+        
+        // 正解なら0.4秒、不正解なら0.6秒の待機時間
+        const delay = isCorrect ? 400 : 600;
+
         setTimeout(() => {
             if (index < problems.length - 1) {
                 setIndex(prev => prev + 1);
                 setInputValue('');
                 setFeedback('');
             } else {
-                if (score + (parseInt(inputValue, 10) === correctAnswer ? 1 : 0) === 9) {
+                if (score + (isCorrect ? 1 : 0) === 9) {
                     onPerfectScore();
                 } else {
                     setMode('home');
                 }
             }
-        }, 1500);
+        }, delay);
     };
 
     if (!dan) {
@@ -609,6 +613,7 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
     const [inputValue, setInputValue] = useState('');
     const [score, setScore] = useState(0);
     const [showResults, setShowResults] = useState(false);
+    const [isChecking, setIsChecking] = useState(false);
 
     useEffect(() => {
         const allProblems: Array<{ a: number, b: number }> = [];
@@ -638,20 +643,29 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
     const correctAnswer = currentProblem.a * currentProblem.b;
 
     const handleCheck = () => {
+        if (isChecking) return;
+        setIsChecking(true);
+
         const isCorrect = parseInt(inputValue, 10) === correctAnswer;
         if (isCorrect) {
             setScore(prev => prev + 1);
         }
         
-        if (index < problems.length - 1) {
-            setIndex(prev => prev + 1);
-            setInputValue('');
-        } else {
-            setShowResults(true);
-            if (score + (isCorrect ? 1 : 0) === 10) {
-                 setTimeout(onPerfectScore, 2000);
+        // 正解なら0.4秒、不正解なら0.6秒の待機時間
+        const delay = isCorrect ? 400 : 600;
+
+        setTimeout(() => {
+            setIsChecking(false);
+            if (index < problems.length - 1) {
+                setIndex(prev => prev + 1);
+                setInputValue('');
+            } else {
+                setShowResults(true);
+                if (score + (isCorrect ? 1 : 0) === 10) {
+                     setTimeout(onPerfectScore, 2000);
+                }
             }
-        }
+        }, delay);
     };
 
     if (showResults) {
@@ -672,10 +686,10 @@ function TestScreen({ setMode, onPerfectScore }: TestScreenProps): React.ReactEl
                 <div style={styles.problemText}>{currentProblem.a} × {currentProblem.b}</div>
                 <InputControls 
                     value={inputValue}
-                    onNumberClick={(num) => setInputValue(prev => (prev + num).slice(0, 3))}
-                    onClear={() => setInputValue('')}
+                    onNumberClick={(num) => !isChecking && setInputValue(prev => (prev + num).slice(0, 3))}
+                    onClear={() => !isChecking && setInputValue('')}
                     onCheck={handleCheck}
-                    checkDisabled={!inputValue}
+                    checkDisabled={!inputValue || isChecking}
                     showNext={false}
                 />
             </div>
