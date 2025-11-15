@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { initDB, saveImage, getImage, deleteImage } from './db';
@@ -681,6 +680,19 @@ function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTime
             longPressTimer.current = null;
         }
     };
+
+    const handleDownloadData = () => {
+        const jsonContent = JSON.stringify(TRAIN_DATA, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'train-data.json';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
     
     return (
         <div style={styles.galleryContainer}>
@@ -689,7 +701,6 @@ function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTime
             <div style={styles.galleryGrid}>
                 {sortedCards.map(card => (
                     <div 
-                        // FIX: Moved dynamic key from CardImage to its parent div to fix TypeScript error and force re-render on retry.
                         key={`${card.id}-${retryTimestamps[card.id] || 0}`}
                         style={styles.trainCard}
                         onMouseDown={() => handlePressStart(card.id)}
@@ -709,7 +720,10 @@ function GalleryScreen({ cards, totalCount, setMode, onCardImageRetry, retryTime
                     </div>
                 ))}
             </div>
-            <button style={{...styles.button, ...styles.secondaryButton, margin: '1rem auto'}} onClick={() => setMode('home')}>ホームにもどる</button>
+            <div style={{display: 'flex', justifyContent: 'center', gap: '1rem', margin: '1rem 0', flexWrap: 'wrap'}}>
+                <button style={{...styles.button, ...styles.downloadButton}} onClick={handleDownloadData}>電車リストを保存</button>
+                <button style={{...styles.button, ...styles.secondaryButton}} onClick={() => setMode('home')}>ホームにもどる</button>
+            </div>
         </div>
     );
 }
